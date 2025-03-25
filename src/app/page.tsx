@@ -1,16 +1,26 @@
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Menu from "@/components/custom/menu";
+import Search from "@/components/custom/search";
+
 export default function Home() {
   return (
     <div className="min-h-screen">
-      <header className="p-2 flex">
-        <div className="flex-1">
+      <header className="p-2 grid grid-cols-3 justify-around">
+        <div className="col-span-1">
         </div>
-        <Menu />
+        <div className="col-span-1">
 
+        <Search />
+        </div>
+        <div className="col-span-1">
+          <div className="flex justify-end">
+            <Menu />
+          </div>
+        </div>
       </header>
-      <h1>Search</h1>
+      <main className="p-2">
+      </main>
     </div>
   );
 }
