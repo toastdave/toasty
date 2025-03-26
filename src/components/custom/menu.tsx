@@ -22,7 +22,7 @@ const Menu = () => {
       <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         <div className='flex h-full'>
           <div className='flex-1' onClick={() => setOpen(false)}></div>
-          <div className={`w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`w-full md:w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="p-4 flex flex-col h-full">
               <div className='flex justify-end'>
                 <Button 

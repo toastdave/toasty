@@ -3,7 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Input } from '../ui/input'
 import { useMediaQuery } from '@/hooks/use-media-query'
-import { SearchIcon } from 'lucide-react'
+import { Link, SearchIcon, XIcon } from 'lucide-react'
+import { Button } from '../ui/button'
+import { ThemeToggle } from '../ui/theme-toggle'
 
 const Search = () => {
   const [isFocused, setIsFocused] = useState(false)
@@ -25,7 +27,12 @@ const Search = () => {
   return (
     <div className='flex-1'>
 
-    {isMobile ? <SearchIcon className='w-6 h-6' /> : <Input 
+    {isMobile ? 
+        <Button variant='ghost' size='icon' onClick={() => setIsFocused(!isFocused)}>
+            <SearchIcon className='w-10 h-10' /> 
+        </Button>
+        : 
+        <Input 
           type="text" 
           placeholder="Search" 
           onFocus={handleFocus}
@@ -33,17 +40,73 @@ const Search = () => {
           className={isFocused ? 'ring-2 ring-primary' : ''}
         />}
 
-        {isFocused && (
-          <div 
-            className='fixed left-1/2 -translate-x-1/2 h-80 w-1/2'
-          >
-            <div className='flex flex-col w-full h-full mt-4 bg-muted rounded-lg'>
-                
+          <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          <div className='flex h-full'>
+          <div className='flex-1' onClick={() => setIsFocused(false)}></div>
+          <div className={`w-full md:w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${isFocused ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-4 flex flex-col h-full">
+              <div className='flex justify-end'>
+                <Button 
+                  variant='ghost' 
+                  size='icon' 
+                  className='rounded-full' 
+                  onClick={() => setIsFocused(false)}
+                >
+                  <XIcon />
+                </Button>
+              </div>
+              <div className='flex flex-col gap-4 flex-1'>
+                    <Link href='/'>Home</Link>
+                    <Link href='/'>About</Link>
+                    <Link href='/'>Contact</Link>
+              </div>
+            <div className='flex gap-4 justify-end'>
+                <ThemeToggle />
             </div>
+            </div>
+          </div>
         </div>
-        )}
+          </div>
     </div>
   )
 }
+
+<div>
+      <Button 
+        variant='outline' 
+        size='icon' 
+        className='rounded-full' 
+        onClick={() => setIsFocused(!open)}
+      >
+      </Button>
+      
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className='flex h-full'>
+          <div className='flex-1' onClick={() => setOpen(false)}></div>
+          <div className={`w-full md:w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-4 flex flex-col h-full">
+              <div className='flex justify-end'>
+                <Button 
+                  variant='ghost' 
+                  size='icon' 
+                  className='rounded-full' 
+                  onClick={() => setOpen(false)}
+                >
+                  <XIcon />
+                </Button>
+              </div>
+              <div className='flex flex-col gap-4 flex-1'>
+                    <Link href='/'>Home</Link>
+                    <Link href='/'>About</Link>
+                    <Link href='/'>Contact</Link>
+              </div>
+            <div className='flex gap-4 justify-end'>
+                <ThemeToggle />
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 export default Search
