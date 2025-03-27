@@ -9,6 +9,7 @@ import { ThemeToggle } from "../ui/theme-toggle";
 
 const SearchMobile = () => {
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFocus = () => {
     setIsFocused(true);
@@ -19,6 +20,31 @@ const SearchMobile = () => {
     setIsFocused(false);
     console.log("Input blurred");
   };
+
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      // Small delay to ensure the input is visible before focusing
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isFocused]);
+
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFocused) {
+        setIsFocused(false);
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleEscapeKey);
+
+    // Clean up event listener
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isFocused]);
 
   return (
     <>
@@ -39,7 +65,7 @@ const SearchMobile = () => {
               isFocused ? "translate-y-0" : "-translate-y-full"
               }`}
           >
-            <div className="p-4 flex flex-col h-full">
+            <div className="p-4 flex flex-col h-full gap-2">
               <div className="flex justify-end">
                 <Button
                   variant="ghost"
@@ -50,7 +76,14 @@ const SearchMobile = () => {
                   <XIcon className='!w-6 !h-6' />
                 </Button>
               </div>
-              
+              <div className="flex flex-col gap-2 rounded-lg">
+                <Input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full"
+                  ref={inputRef}
+                />
+              </div>
             </div>
           </div>
           <div className="flex-1" onClick={() => setIsFocused(false)}></div>

@@ -11,6 +11,7 @@ const Search = () => {
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -30,17 +31,32 @@ const Search = () => {
     };
   }, []);
 
-  // Add/remove overflow hidden on body when dropdown is open
+  // Handle escape key press
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        inputRef.current?.blur();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
     return () => {
-      document.body.classList.remove("overflow-hidden");
+      document.removeEventListener('keydown', handleEscapeKey);
     };
   }, [isOpen]);
+
+//   // Add/remove overflow hidden on body when dropdown is open
+//   useEffect(() => {
+//     if (isOpen) {
+//       document.body.classList.add("overflow-hidden");
+//     } else {
+//       document.body.classList.remove("overflow-hidden");
+//     }
+//     return () => {
+//       document.body.classList.remove("overflow-hidden");
+//     };
+//   }, [isOpen]);
 
   return (
     <>
@@ -60,6 +76,7 @@ const Search = () => {
           value={inputValue}
           onChange={handleInputChange}
           className={`w-full transition-all duration-200 ${isOpen ? "ring-2 ring-primary" : ""}`}
+          ref={inputRef}
         />
         
         {isOpen && (

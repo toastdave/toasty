@@ -14,7 +14,7 @@ const Header = () => {
       {isMobile ? (
         <nav className="flex justify-between w-full">
           <div className="flex-1 flex justify-start ">
-            <p className="text-2xl font-bold">🔥TOASTY</p>
+            <p className="text-2xl font-bold tracking-tighter">🔥TOASTY</p>
           </div>
           <div className="flex gap-4 items-center">
             <SearchMobile />
@@ -24,7 +24,7 @@ const Header = () => {
       ) : (
         <nav className="grid grid-cols-3 justify-around">
           <div className="col-span-1 flex justify-start">
-            <p className="text-2xl font-bold">🔥TOASTY</p>
+            <p className="text-2xl font-bold tracking-tighter">🔥TOASTY</p>
           </div>
           <div className="col-span-1">
             <Search />
