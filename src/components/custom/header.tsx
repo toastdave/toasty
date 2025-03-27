@@ -4,19 +4,20 @@ import React from "react";
 import Menu from "./menu";
 import Search from "./search";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import SearchMobile from "./search-mobile";
 
 const Header = () => {
   const isMobile = useMediaQuery("(max-width: 480px)");
 
   return (
-    <header className="p-2">
+    <header className="p-2 h-16">
       {isMobile ? (
         <nav className="flex justify-between w-full">
           <div className="flex-1 flex justify-start ">
             <p className="text-2xl">🔥Toasty</p>
           </div>
-          <div className="flex gap-2 items-center">
-            <Search />
+          <div className="flex gap-4 items-center">
+            <SearchMobile />
             <Menu />
           </div>
         </nav>

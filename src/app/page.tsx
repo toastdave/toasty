@@ -5,9 +5,9 @@ import Search from "@/components/custom/search";
 import Header from "@/components/custom/header";
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      <Header />
+    <div className=" bg-red-500">
       <main className="p-2">
+        howdy
       </main>
     </div>
   );

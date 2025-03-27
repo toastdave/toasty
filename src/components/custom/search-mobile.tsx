@@ -7,7 +7,7 @@ import { Link, SearchIcon, XIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../ui/theme-toggle";
 
-const Search = () => {
+const SearchMobile = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   const handleFocus = () => {
@@ -22,16 +22,12 @@ const Search = () => {
 
   return (
     <>
-      <Input
-        type="text"
-        placeholder="Search"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        className={isFocused ? "ring-2 ring-primary" : ""}
-      />
+    <Button variant='ghost' size='icon' className='' onClick={() => setIsFocused(!isFocused)}>
+      <SearchIcon className="!w-6 !h-6"  onClick={() => setIsFocused(!isFocused)} />
+    </Button>
 
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out z-50 ${
           isFocused
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -71,4 +67,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default SearchMobile;
