@@ -22,16 +22,16 @@ const Menu = () => {
       <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} z-50`}>
         <div className='flex h-full'>
           <div className='flex-1' onClick={() => setOpen(false)}></div>
-          <div className={`w-full md:w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`w-80 rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="p-4 flex flex-col h-full">
               <div className='flex justify-end'>
                 <Button 
                   variant='ghost' 
                   size='icon' 
-                  className='rounded-full' 
+                  className='' 
                   onClick={() => setOpen(false)}
                 >
-                  <XIcon />
+                  <XIcon className='!w-6 !h-6' />
                 </Button>
               </div>
               <div className='flex flex-col gap-4 flex-1'>

@@ -8,64 +8,71 @@ import { Button } from "../ui/button";
 import { ThemeToggle } from "../ui/theme-toggle";
 
 const Search = () => {
-  const [isFocused, setIsFocused] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState("");
 
-  const handleFocus = () => {
-    setIsFocused(true);
-    console.log("Input focused");
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
   };
 
-  const handleBlur = () => {
-    setIsFocused(false);
-    console.log("Input blurred");
-  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Add/remove overflow hidden on body when dropdown is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [isOpen]);
 
   return (
     <>
-      <Input
-        type="text"
-        placeholder="Search"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        className={isFocused ? "ring-2 ring-primary" : ""}
-      />
-
+      {/* Backdrop overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
-          isFocused
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-200 z-40 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-      >
-        <div className="flex h-full">
-          <div className="flex-1" onClick={() => setIsFocused(false)}></div>
-          <div
-            className={`w-full rounded-l-lg bg-muted h-full transition-transform duration-300 ease-in-out ${
-              isFocused ? "translate-y-0" : "translate-y-full"
-            }`}
-          >
-            <div className="p-4 flex flex-col h-full">
-              <div className="flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => setIsFocused(false)}
-                >
-                  <XIcon />
-                </Button>
-              </div>
-              <div className="flex flex-col gap-4 flex-1">
-                <Link href="/">Home</Link>
-                <Link href="/">About</Link>
-                <Link href="/">Contact</Link>
-              </div>
-              <div className="flex gap-4 justify-end">
-                <ThemeToggle />
-              </div>
+        onClick={() => setIsOpen(false)}
+      />
+      
+      <div className="relative flex-1 z-50 flex flex-col items-center" ref={searchRef}>
+        <Input
+          type="text"
+          placeholder="Search"
+          onFocus={() => setIsOpen(true)}
+          value={inputValue}
+          onChange={handleInputChange}
+          className={`w-full transition-all duration-200 ${isOpen ? "ring-2 ring-primary" : ""}`}
+        />
+        
+        {isOpen && (
+          <div className="w-full mt-2 bg-background border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto min-w-60">
+            <div className="p-3">
+              <Button variant="ghost" size="icon" className="w-full justify-start">
+                <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">
+                  <SearchIcon className="!w-6 !h-6" />
+                </a>
+              </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

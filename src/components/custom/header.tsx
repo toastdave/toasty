@@ -10,11 +10,11 @@ const Header = () => {
   const isMobile = useMediaQuery("(max-width: 480px)");
 
   return (
-    <header className="p-2 h-16">
+    <header className="p-2 h-16 sticky top-0 bg-background z-10">
       {isMobile ? (
         <nav className="flex justify-between w-full">
           <div className="flex-1 flex justify-start ">
-            <p className="text-2xl">🔥Toasty</p>
+            <p className="text-2xl font-bold">🔥TOASTY</p>
           </div>
           <div className="flex gap-4 items-center">
             <SearchMobile />
@@ -24,7 +24,7 @@ const Header = () => {
       ) : (
         <nav className="grid grid-cols-3 justify-around">
           <div className="col-span-1 flex justify-start">
-            <p className="text-2xl">🔥Toasty</p>
+            <p className="text-2xl font-bold">🔥TOASTY</p>
           </div>
           <div className="col-span-1">
             <Search />
