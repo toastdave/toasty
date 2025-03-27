@@ -63,7 +63,7 @@ const Search = () => {
         />
         
         {isOpen && (
-          <div className="w-full mt-2 bg-background border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto min-w-60">
+          <div className="w-full mt-2 bg-muted border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto min-w-60">
             <div className="p-3">
               <Button variant="ghost" size="icon" className="w-full justify-start">
                 <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">

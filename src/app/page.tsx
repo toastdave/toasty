@@ -5,27 +5,9 @@ import Search from "@/components/custom/search";
 import Header from "@/components/custom/header";
 export default function Home() {
   return (
-    <div className=" bg-red-500">
+    <div>
       <main className="p-2">
         howdy
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
-        <div className="bg-blue-500 h-20 w-full m-2">
-          <p>hello</p>
-        </div>
       </main>
     </div>
   );
