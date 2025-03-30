@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Input } from "../ui/input";
+import { Input } from "../../ui/input";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Link, SearchIcon, XIcon } from "lucide-react";
-import { Button } from "../ui/button";
-import { ThemeToggle } from "../ui/theme-toggle";
+import { Button } from "../../ui/button";
+import { ThemeToggle } from "../../ui/theme-toggle";
 
 const SearchMobile = () => {
   const [isFocused, setIsFocused] = useState(false);
