@@ -10,9 +10,9 @@ const lobsterFont = Lobster({
 
 export const revalidate = 3600; // invalidate every hour
 
-const TrendingShows = async () => {
-  const trendingShowsPageOne = await fetch(
-    `https://api.themoviedb.org/3/trending/tv/week`,
+const TrendingMovies = async () => {
+  const trendingMoviesPageOne = await fetch(
+    `https://api.themoviedb.org/3/trending/movie/week`,
     {
       headers: {
         Authorization: `Bearer ${process.env.TMDB_AUTH}`,
@@ -20,8 +20,8 @@ const TrendingShows = async () => {
     }
   );
 
-  const trendingShowsPageTwo = await fetch(
-    `https://api.themoviedb.org/3/trending/tv/week?page=2`,
+  const trendingMoviesPageTwo = await fetch(
+    `https://api.themoviedb.org/3/trending/movie/week?page=2`,
     {
       headers: {
         Authorization: `Bearer ${process.env.TMDB_AUTH}`,
@@ -29,8 +29,8 @@ const TrendingShows = async () => {
     }
   );
 
-  const dataOne = await trendingShowsPageOne.json();
-  const dataTwo = await trendingShowsPageTwo.json();
+  const dataOne = await trendingMoviesPageOne.json();
+  const dataTwo = await trendingMoviesPageTwo.json();
 
   const data = [...dataOne.results, ...dataTwo.results];
 
@@ -44,7 +44,7 @@ const TrendingShows = async () => {
           className="flex gap-2 p-2 rounded-md w-full relative"
         >
           <div className="">
-            <p className={`absolute top-0 -left-4 text-7xl font-bold ${lobsterFont.className}`}>
+            <p className={`absolute top-0 -left-4 rounded-full text-7xl font-bold ${lobsterFont.className}`}>
               {index + 1}
             </p>
           </div>
@@ -59,4 +59,4 @@ const TrendingShows = async () => {
   );
 };
 
-export default TrendingShows;
+export default TrendingMovies;
