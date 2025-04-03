@@ -48,7 +48,7 @@ const TrendingMovies = async () => {
               {index + 1}
             </p>
           </div>
-          <ImageCard key={index} imageUrl={show.poster_path} />
+          <ImageCard key={index} imageUrl={show.poster_path} itemId={show.id} type="movie" />
           {/* <div className='flex flex-col'>
                     <h2 className='text-lg font-bold'>{show.name}</h2>
                     <p className='text-sm text-muted-foreground'>{show.vote_average}</p>

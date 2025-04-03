@@ -1,6 +1,7 @@
 import React from "react";
 import ImageCard from "./image-card";
 import { Lobster } from "next/font/google";
+import { redirect } from 'next/navigation'
 
 // Initialize the font at module scope
 const lobsterFont = Lobster({ 
@@ -46,9 +47,9 @@ const TrendingShows = async () => {
           <div className="">
             <p className={`absolute top-0 -left-4 text-7xl font-bold ${lobsterFont.className}`}>
               {index + 1}
-            </p>
+            </p>-
           </div>
-          <ImageCard key={index} imageUrl={show.poster_path} />
+          <ImageCard key={index} imageUrl={show.poster_path} itemId={show.id} type="tv" />
           {/* <div className='flex flex-col'>
                     <h2 className='text-lg font-bold'>{show.name}</h2>
                     <p className='text-sm text-muted-foreground'>{show.vote_average}</p>
