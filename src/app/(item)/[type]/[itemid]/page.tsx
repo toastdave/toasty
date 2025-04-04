@@ -21,6 +21,6 @@ export default async function Page({
     console.log(data)
 
     return <div>
-      <ItemHeader name={data.name} poster_path={data.poster_path} />
+      <ItemHeader name={data.name} poster_path={data.poster_path} overview={data.overview} />
     </div>
   }
