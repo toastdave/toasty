@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/space-grotesk";
+
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+@theme {
+	--font-sans: "Inter Variable", sans-serif;
+	--font-display: "Space Grotesk", sans-serif;
+	--color-ink-950: #121722;
+	--color-ink-800: #2b3344;
+	--color-ink-700: #485267;
+	--color-cream-50: #fff9f0;
+	--color-cream-100: #f6ebd8;
+	--color-mango-300: #f7c56f;
+	--color-coral-400: #ef8d64;
+	--color-sky-300: #85b4ff;
+	--color-foam-200: #d6e7ff;
+	--color-background: #fffdf9;
+	--color-foreground: #121722;
+	--color-card: rgba(255, 255, 255, 0.72);
+	--color-card-foreground: #121722;
+	--color-muted: #f6ebd8;
+	--color-muted-foreground: #5f697d;
+	--color-border: rgba(18, 23, 34, 0.1);
+	--radius: 0.75rem;
+}
+
+:root {
+	color: var(--color-foreground);
+	background: radial-gradient(circle at top left, rgb(247 197 111 / 0.4), transparent 30%),
+		radial-gradient(circle at top right, rgb(133 180 255 / 0.22), transparent 28%),
+		linear-gradient(180deg, #fffdf9 0%, #fff7ea 100%);
+	font-family: var(--font-sans);
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	min-height: 100vh;
+}
+
+@layer base {
+	* {
+		box-sizing: border-box;
+		border-color: var(--color-border);
+	}
+
+	body {
+		@apply text-ink-950;
+	}
+
+	a {
+		@apply transition-colors duration-150;
+	}
+}
