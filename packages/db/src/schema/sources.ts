@@ -1,4 +1,13 @@
-import { index, jsonb, pgEnum, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import {
+	index,
+	jsonb,
+	pgEnum,
+	pgTable,
+	timestamp,
+	uniqueIndex,
+	uuid,
+	varchar,
+} from 'drizzle-orm/pg-core'
 import { mediaItems } from './media'
 
 export const ingestJobTypeEnum = pgEnum('ingest_job_type', [
@@ -39,6 +48,7 @@ export const externalSourceItems = pgTable(
 	(table) => [
 		index('external_source_items_source_idx').on(table.sourceId),
 		index('external_source_items_media_item_idx').on(table.mediaItemId),
+		uniqueIndex('external_source_items_source_external_idx').on(table.sourceId, table.externalId),
 	]
 )
 

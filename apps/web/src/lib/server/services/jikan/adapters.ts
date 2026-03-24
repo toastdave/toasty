@@ -93,10 +93,7 @@ function pickPoster(images: JikanImageSet | undefined, variant: 'default' | 'lar
 	return images?.webp?.image_url ?? images?.jpg?.image_url ?? null
 }
 
-function computePercentComplete(anime: JikanAnime) {
-	const from = anime.aired?.from ? new Date(anime.aired.from) : null
-	const to = anime.aired?.to ? new Date(anime.aired.to) : null
-
+export function computePercentCompleteFromDateRange(from: Date | null, to: Date | null) {
 	if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
 		return null
 	}
@@ -116,6 +113,13 @@ function computePercentComplete(anime: JikanAnime) {
 	}
 
 	return Math.round(((now - from.getTime()) / duration) * 100)
+}
+
+function computePercentComplete(anime: JikanAnime) {
+	return computePercentCompleteFromDateRange(
+		anime.aired?.from ? new Date(anime.aired.from) : null,
+		anime.aired?.to ? new Date(anime.aired.to) : null
+	)
 }
 
 export function normalizeAnimeCard(anime: JikanAnime): AnimeCard {

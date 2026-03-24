@@ -3,7 +3,7 @@ import { pgTable } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
 	id: text('id').primaryKey(),
-	handle: text('handle').notNull().unique(),
+	handle: text('handle').unique(),
 	name: text('name').notNull(),
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').notNull().default(false),

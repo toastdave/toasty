@@ -1,5 +1,6 @@
 import { getRequestEvent } from '$app/server'
 import { env } from '$env/dynamic/private'
+import { getSocialProviderConfig } from '$lib/server/auth-providers'
 import { db } from '$lib/server/db'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import * as schema from '@toasty/db/schema'
@@ -17,4 +18,5 @@ export const auth = betterAuth({
 	},
 	plugins: [sveltekitCookies(getRequestEvent)],
 	secret: env.BETTER_AUTH_SECRET,
+	socialProviders: getSocialProviderConfig(),
 })

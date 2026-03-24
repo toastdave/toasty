@@ -49,6 +49,13 @@ Toasty is an anime-first discovery app that starts with Jikan-powered charts and
 - `mise run db:push` - push the schema to Postgres
 - `mise run seed` - seed default sources, rubrics, and vibe badges
 
+## Auth setup
+
+- Email/password auth uses `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
+- GitHub OAuth callback: `http://localhost:5173/api/auth/callback/github`
+- Google OAuth callback: `http://localhost:5173/api/auth/callback/google`
+- Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` to enable those buttons.
+
 ## Product notes
 
 - Jikan powers the first live anime discovery views, but canonical catalog data still belongs in our database.

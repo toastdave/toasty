@@ -15,6 +15,7 @@
         "@better-auth/drizzle-adapter": "^1.5.5",
         "@toasty/db": "workspace:*",
         "better-auth": "^1.5.5",
+        "drizzle-orm": "^0.44.7",
         "zod": "^4.1.11",
       },
       "devDependencies": {

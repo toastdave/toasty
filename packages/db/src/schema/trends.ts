@@ -6,13 +6,14 @@ import {
 	pgEnum,
 	pgTable,
 	timestamp,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from 'drizzle-orm/pg-core'
 import { mediaItems, mediaTypeEnum } from './media'
 import { externalSources } from './sources'
 
-export const trendWindowEnum = pgEnum('trend_window', ['daily', 'weekly', 'monthly'])
+export const trendWindowEnum = pgEnum('trend_window', ['daily', 'weekly', 'monthly', 'all_time'])
 
 export const trendSnapshots = pgTable(
 	'trend_snapshots',
@@ -43,7 +44,13 @@ export const trendSnapshotItems = pgTable(
 		deltaRank: integer('delta_rank'),
 		metadataJsonb: jsonb('metadata_jsonb').default({}),
 	},
-	(table) => [index('trend_snapshot_items_snapshot_idx').on(table.trendSnapshotId)]
+	(table) => [
+		index('trend_snapshot_items_snapshot_idx').on(table.trendSnapshotId),
+		uniqueIndex('trend_snapshot_items_snapshot_media_idx').on(
+			table.trendSnapshotId,
+			table.mediaItemId
+		),
+	]
 )
 
 export const mediaPopularityMetrics = pgTable(
