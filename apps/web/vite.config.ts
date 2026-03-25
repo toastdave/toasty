@@ -5,7 +5,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
+		allowedHosts: ['.ts.net'],
 		host: true,
-		port: 5173,
+		port: 7421,
 	},
 })

@@ -16,5 +16,26 @@ services:
       timeout: 5s
       retries: 10
 
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: development
+    container_name: toasty-web
+    environment:
+      CHOKIDAR_USEPOLLING: 'true'
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/toasty
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '7421:7421'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: bun run --cwd apps/web dev -- --host 0.0.0.0 --port 7421
+
 volumes:
   postgres-data:
