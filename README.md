@@ -38,8 +38,8 @@ cp .env.example .env
 2. Update `.env` for your machine. For local-only development, the defaults work. For tailnet access, switch to your Tailscale hostname:
 
 ```dotenv
-BETTER_AUTH_URL=https://<device>.<tailnet>.ts.net:7421
-BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:7421,http://127.0.0.1:7421,https://<device>.<tailnet>.ts.net:7421
+BETTER_AUTH_URL=https://<device>.<tailnet>.ts.net:1801
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:1801,http://127.0.0.1:1801,https://<device>.<tailnet>.ts.net:1801
 ```
 
 3. Install the toolchain and dependencies:
@@ -71,8 +71,8 @@ mise run dev
 
 App URLs:
 
-- Web app: `http://localhost:7421`
-- Postgres: `postgresql://postgres:postgres@localhost:5432/toasty`
+- Web app: `http://localhost:1801`
+- Postgres: `postgresql://postgres:postgres@localhost:1802/toasty`
 
 Stop supporting services:
 
@@ -115,7 +115,7 @@ mise run seed
 
 Open:
 
-- Web app: `http://localhost:7421`
+- Web app: `http://localhost:1801`
 
 Stop:
 
@@ -135,7 +135,7 @@ The stack is safe to leave running during development. Code changes are picked u
 
 Expose the web app to your tailnet after either local or full Docker development is running.
 
-This repo uses port `7421` for both local and Tailscale access so it stays distinct from sibling apps while avoiding a `443` collision on a shared tailnet node.
+This repo uses port `1801` for both local and Tailscale access so it stays distinct from sibling apps while avoiding a `443` collision on a shared tailnet node.
 
 Start Tailscale Serve:
 
@@ -158,17 +158,17 @@ mise run tailscale:down
 Open the app from another device on your tailnet:
 
 ```text
-https://<device>.<tailnet>.ts.net:7421
+https://<device>.<tailnet>.ts.net:1801
 ```
 
-Use the full `https://` URL. This setup serves HTTPS on port `7421`; `http://` requests to the tailnet hostname will fail.
+Use the full `https://` URL. This setup serves HTTPS on port `1801`; `http://` requests to the tailnet hostname will fail.
 
 ## Auth setup
 
 - Email/password auth uses `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `BETTER_AUTH_TRUSTED_ORIGINS`
-- GitHub OAuth callback: `http://localhost:7421/api/auth/callback/github`
-- Google OAuth callback: `http://localhost:7421/api/auth/callback/google`
-- For tailnet access, use the same callback path on your `https://<device>.<tailnet>.ts.net:7421` hostname
+- GitHub OAuth callback: `http://localhost:1801/api/auth/callback/github`
+- Google OAuth callback: `http://localhost:1801/api/auth/callback/google`
+- For tailnet access, use the same callback path on your `https://<device>.<tailnet>.ts.net:1801` hostname
 - Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` to enable those buttons
 
 ## Common commands

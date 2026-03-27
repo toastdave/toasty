@@ -10,7 +10,7 @@ description = "Install workspace dependencies"
 [tasks.dev]
 depends = ["install"]
 run = "bun run dev"
-description = "Start the SvelteKit app locally on 7421"
+description = "Start the SvelteKit app locally on 1801"
 
 [tasks."dev:docker"]
 run = "docker compose up -d --build"
@@ -25,16 +25,16 @@ run = "docker compose down"
 description = "Stop Docker services"
 
 [tasks."tailscale:up"]
-run = "sudo tailscale serve --bg --https=7421 http://127.0.0.1:7421"
-description = "Expose the web app over Tailscale on port 7421"
+run = "sudo tailscale serve --bg --https=1801 http://127.0.0.1:1801"
+description = "Expose the web app over Tailscale on port 1801"
 
 [tasks."tailscale:status"]
 run = "tailscale serve status"
 description = "Show Tailscale Serve status"
 
 [tasks."tailscale:down"]
-run = "sudo tailscale serve --https=7421 off"
-description = "Stop Tailscale Serve on port 7421"
+run = "sudo tailscale serve --https=1801 off"
+description = "Stop Tailscale Serve on port 1801"
 
 [tasks.check]
 depends = ["install"]

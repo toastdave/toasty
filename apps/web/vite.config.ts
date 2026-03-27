@@ -7,6 +7,6 @@ export default defineConfig({
 	server: {
 		allowedHosts: ['.ts.net'],
 		host: true,
-		port: 7421,
+		port: 1801,
 	},
 })

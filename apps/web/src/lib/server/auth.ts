@@ -8,7 +8,7 @@ import * as schema from '@toasty/db/schema'
 import { betterAuth } from 'better-auth'
 import { sveltekitCookies } from 'better-auth/svelte-kit'
 
-const localDevOrigins = ['http://127.0.0.1:7421', 'http://localhost:7421']
+const localDevOrigins = ['http://127.0.0.1:1801', 'http://localhost:1801']
 
 function parseOrigins(value: string | undefined) {
 	if (!value) {
