@@ -26,6 +26,7 @@ import {
 type DatabaseExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 const CURRENT_SEASON_LABEL = 'Jikan Current Season'
+const DETAIL_MAX_AGE_MS = 1000 * 60 * 60 * 24
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
 const SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 6
 const TOP_ANIME_LABEL = 'Jikan Top Anime'
@@ -42,6 +43,11 @@ type SnapshotRecord = {
 type PersistedAnimeRecord = {
 	mediaItemId: string
 	sourceScore: number | null
+}
+
+type StoredAnimeDetailRecord = {
+	anime: AnimeDetail
+	lastFetchedAt: Date | null
 }
 
 function asStringArray(value: unknown) {
@@ -407,6 +413,7 @@ async function listSnapshotAnimeCards(snapshotId: string): Promise<AnimeCard[]> 
 		.select({
 			airedFrom: animeDetails.airedFrom,
 			airedTo: animeDetails.airedTo,
+			broadcastDay: animeDetails.broadcastDay,
 			broadcastLabel: animeDetails.broadcastLabel,
 			episodes: animeDetails.episodeCount,
 			largePosterUrl: mediaItems.imageUrlBackdrop,
@@ -434,6 +441,7 @@ async function listSnapshotAnimeCards(snapshotId: string): Promise<AnimeCard[]> 
 	const genreMap = await getGenreMap(rows.map((row) => row.mediaItemId))
 
 	return rows.map((row) => ({
+		broadcastDay: row.broadcastDay,
 		broadcastLabel: row.broadcastLabel,
 		episodes: row.episodes,
 		genres: genreMap.get(row.mediaItemId) ?? [],
@@ -455,13 +463,14 @@ async function listSnapshotAnimeCards(snapshotId: string): Promise<AnimeCard[]> 
 	}))
 }
 
-async function getStoredAnimeDetailByMalId(malId: number): Promise<AnimeDetail | null> {
+async function getStoredAnimeDetailByMalId(malId: number): Promise<StoredAnimeDetailRecord | null> {
 	const [row] = await db
 		.select({
 			airedFrom: animeDetails.airedFrom,
 			airedLabel: animeDetails.airedLabel,
 			airedTo: animeDetails.airedTo,
 			background: animeDetails.background,
+			broadcastDay: animeDetails.broadcastDay,
 			broadcastLabel: animeDetails.broadcastLabel,
 			broadcastTimezone: animeDetails.broadcastTimezone,
 			demographicsJsonb: animeDetails.demographicsJsonb,
@@ -469,6 +478,7 @@ async function getStoredAnimeDetailByMalId(malId: number): Promise<AnimeDetail |
 			episodes: animeDetails.episodeCount,
 			format: animeDetails.format,
 			largePosterUrl: mediaItems.imageUrlBackdrop,
+			lastFetchedAt: externalSourceItems.lastFetchedAt,
 			mediaItemId: mediaItems.id,
 			posterUrl: mediaItems.imageUrlPoster,
 			ratingLabel: animeDetails.ratingLabel,
@@ -488,6 +498,7 @@ async function getStoredAnimeDetailByMalId(malId: number): Promise<AnimeDetail |
 		})
 		.from(animeDetails)
 		.innerJoin(mediaItems, eq(mediaItems.id, animeDetails.mediaItemId))
+		.leftJoin(externalSourceItems, eq(externalSourceItems.mediaItemId, mediaItems.id))
 		.where(eq(animeDetails.jikanMalId, String(malId)))
 		.limit(1)
 
@@ -498,34 +509,46 @@ async function getStoredAnimeDetailByMalId(malId: number): Promise<AnimeDetail |
 	const genreMap = await getGenreMap([row.mediaItemId])
 
 	return {
-		airedLabel: row.airedLabel,
-		background: row.background,
-		broadcastLabel: row.broadcastLabel,
-		broadcastTimeZone: row.broadcastTimezone,
-		demographics: asStringArray(row.demographicsJsonb),
-		duration: typeof row.durationMinutes === 'number' ? `${row.durationMinutes} min` : null,
-		episodes: row.episodes,
-		genres: genreMap.get(row.mediaItemId) ?? [],
-		id: malId,
-		largePosterUrl: row.largePosterUrl,
-		percentComplete: computePercentCompleteFromDateRange(row.airedFrom, row.airedTo),
-		posterUrl: row.posterUrl,
-		rank: null,
-		rating: row.ratingLabel,
-		score: toNullableNumber(row.score),
-		season: row.season,
-		secondaryTitle: row.secondaryTitle,
-		slug: row.slug,
-		source: row.sourceMaterial,
-		sourceUrl: row.sourceUrl,
-		status: row.status,
-		studios: asStringArray(row.studiosJsonb),
-		synopsis: row.synopsis,
-		themes: asStringArray(row.themesJsonb),
-		title: row.title,
-		type: row.type,
-		year: row.year,
+		anime: {
+			airedLabel: row.airedLabel,
+			background: row.background,
+			broadcastDay: row.broadcastDay,
+			broadcastLabel: row.broadcastLabel,
+			broadcastTimeZone: row.broadcastTimezone,
+			demographics: asStringArray(row.demographicsJsonb),
+			duration: typeof row.durationMinutes === 'number' ? `${row.durationMinutes} min` : null,
+			episodes: row.episodes,
+			genres: genreMap.get(row.mediaItemId) ?? [],
+			id: malId,
+			largePosterUrl: row.largePosterUrl,
+			percentComplete: computePercentCompleteFromDateRange(row.airedFrom, row.airedTo),
+			posterUrl: row.posterUrl,
+			rank: null,
+			rating: row.ratingLabel,
+			score: toNullableNumber(row.score),
+			season: row.season,
+			secondaryTitle: row.secondaryTitle,
+			slug: row.slug,
+			source: row.sourceMaterial,
+			sourceUrl: row.sourceUrl,
+			status: row.status,
+			studios: asStringArray(row.studiosJsonb),
+			synopsis: row.synopsis,
+			themes: asStringArray(row.themesJsonb),
+			title: row.title,
+			type: row.type,
+			year: row.year,
+		},
+		lastFetchedAt: row.lastFetchedAt ?? null,
 	}
+}
+
+function detailIsFresh(record: StoredAnimeDetailRecord | null) {
+	if (!record?.lastFetchedAt) {
+		return false
+	}
+
+	return Date.now() - record.lastFetchedAt.getTime() <= DETAIL_MAX_AGE_MS
 }
 
 export async function syncJikanTrendingCatalog(fetcher: Fetcher) {
@@ -693,15 +716,25 @@ export async function getCurrentSeasonCatalog(fetcher: Fetcher): Promise<AnimeCa
 }
 
 export async function getAnimeDetailCatalog(malId: number, fetcher: Fetcher): Promise<AnimeDetail> {
+	const storedAnimeRecord = await getStoredAnimeDetailByMalId(malId)
+
+	if (storedAnimeRecord && detailIsFresh(storedAnimeRecord)) {
+		return storedAnimeRecord.anime
+	}
+
 	try {
 		await syncJikanAnimeDetailCatalog(malId, fetcher)
 		const storedAnime = await getStoredAnimeDetailByMalId(malId)
 
 		if (storedAnime) {
-			return storedAnime
+			return storedAnime.anime
 		}
 	} catch (error) {
 		console.error('Failed to load anime detail from catalog, falling back to Jikan', error)
+
+		if (storedAnimeRecord) {
+			return storedAnimeRecord.anime
+		}
 	}
 
 	return normalizeAnimeDetail(await fetchAnimeDetailRaw(malId, fetcher))

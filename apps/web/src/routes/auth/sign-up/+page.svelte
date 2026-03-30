@@ -69,14 +69,14 @@ async function signUpWithProvider(provider: 'github' | 'google') {
 				Create your Toasty account.
 			</h1>
 			<p class="max-w-xl text-base leading-8 text-ink-700">
-				Sign up now so the next product slices have somewhere to persist ratings, checklist status,
-				and eventual bracket voting history.
+				Start with a lightweight account so your favorite finds, seasonal picks, and future list-building
+				all have a home from day one.
 			</p>
 			<div class="grid gap-3 text-sm text-ink-700 sm:grid-cols-2">
 				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Fast email signup</div>
 				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Optional Google or GitHub login</div>
-				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">SvelteKit session state</div>
-				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Drizzle-backed auth tables</div>
+				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Save shows worth returning to</div>
+				<div class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Get ready for bigger collection tools</div>
 			</div>
 		</div>
 

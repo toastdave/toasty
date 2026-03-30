@@ -63,17 +63,17 @@ async function signInWithProvider(provider: 'github' | 'google') {
 		<div class="space-y-5 rounded-[2rem] border border-black/8 bg-white/78 p-8 shadow-[0_24px_90px_-54px_rgba(18,23,34,0.55)] backdrop-blur">
 			<p class="font-display text-sm uppercase tracking-[0.3em] text-coral-400">Welcome back</p>
 			<h1 class="font-display text-4xl leading-none text-ink-950 sm:text-5xl">
-				Sign in and keep the watchlist warm.
+				Sign in and pick up where you left off.
 			</h1>
 			<p class="max-w-xl text-base leading-8 text-ink-700">
-				Accounts unlock persisted anime tracking, ratings, and the future tournament arc. For now,
-				the main win is turning our discovery scaffold into a real logged-in app loop.
+				Use your account to keep your browsing in one place, save what looks promising, and stay ready
+				for the bigger collection features coming next.
 			</p>
 			<ul class="grid gap-3 text-sm text-ink-700 sm:grid-cols-2">
-				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Email and password</li>
-				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Typed Better Auth session</li>
-				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Optional Google OAuth</li>
-				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Optional GitHub OAuth</li>
+				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Return to your picks faster</li>
+				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Keep your anime queue in one place</li>
+				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Use email or social login</li>
+				<li class="rounded-2xl border border-black/8 bg-cream-50/80 px-4 py-3">Stay ready for future bracket season</li>
 			</ul>
 		</div>
 

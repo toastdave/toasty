@@ -1,9 +1,29 @@
 <script lang="ts">
+import { goto, invalidateAll } from '$app/navigation'
+import { page } from '$app/state'
+import { authClient } from '$lib/auth-client'
 import { siteConfig } from '$lib/config/site'
 import type { Snippet } from 'svelte'
 import type { LayoutData } from './$types'
 
 const { data, children }: { data: LayoutData; children: Snippet } = $props()
+const navItems = [
+	{ href: '/anime/top', label: 'Top anime' },
+	{ href: '/anime/schedule', label: 'Schedule' },
+]
+const signInHref = $derived(`/auth/sign-in?redirectTo=${encodeURIComponent(page.url.pathname)}`)
+
+async function signOut() {
+	const result = await authClient.signOut()
+
+	if (result.error) {
+		console.error('Unable to sign out', result.error)
+		return
+	}
+
+	await invalidateAll()
+	await goto('/')
+}
 </script>
 
 <svelte:head>
@@ -26,14 +46,23 @@ const { data, children }: { data: LayoutData; children: Snippet } = $props()
 				</div>
 
 				<nav class="flex flex-wrap items-center gap-2 text-sm font-medium text-ink-700">
-					<a class="rounded-full px-4 py-2 hover:bg-cream-100" href="/anime/top">Top anime</a>
-					<a class="rounded-full px-4 py-2 hover:bg-cream-100" href="/anime/schedule">Schedule</a>
+					{#each navItems as item}
+						<a
+							class={`rounded-full px-4 py-2 transition-colors hover:bg-cream-100 ${page.url.pathname.startsWith(item.href) ? 'bg-cream-100 text-ink-950' : ''}`}
+							href={item.href}
+						>
+							{item.label}
+						</a>
+					{/each}
 					{#if data.user}
-						<span class="rounded-full bg-ink-950 px-4 py-2 text-cream-50">
+						<span class="rounded-full border border-black/8 bg-white/80 px-4 py-2 text-ink-950">
 							{data.user.name}
 						</span>
+						<button class="rounded-full bg-ink-950 px-4 py-2 text-cream-50 hover:bg-ink-800" onclick={signOut} type="button">
+							Sign out
+						</button>
 					{:else}
-						<a class="rounded-full bg-ink-950 px-4 py-2 text-cream-50 hover:bg-ink-800" href="/auth/sign-in">
+						<a class="rounded-full bg-ink-950 px-4 py-2 text-cream-50 hover:bg-ink-800" href={signInHref}>
 							Sign in
 						</a>
 					{/if}

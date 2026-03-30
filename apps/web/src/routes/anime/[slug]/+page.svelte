@@ -23,6 +23,7 @@ const { data }: { data: PageData } = $props()
 			<p><span class="font-semibold">Status:</span> {data.anime.status ?? 'Unknown'}</p>
 			<p><span class="font-semibold">Episodes:</span> {data.anime.episodes ?? 'TBD'}</p>
 			<p><span class="font-semibold">Score:</span> {data.anime.score ?? 'TBD'}</p>
+			<p><span class="font-semibold">Progress:</span> {data.anime.percentComplete !== null ? `${data.anime.percentComplete}% through the run` : 'Still settling into its release window'}</p>
 			<p><span class="font-semibold">Aired:</span> {data.anime.airedLabel ?? 'TBD'}</p>
 			<p><span class="font-semibold">Broadcast:</span> {data.anime.broadcastLabel ?? 'TBD'}</p>
 			{#if data.anime.sourceUrl}
@@ -57,7 +58,7 @@ const { data }: { data: PageData } = $props()
 
 		<div class="mt-8 grid gap-4 md:grid-cols-2">
 			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
-				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Metadata</p>
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">At a glance</p>
 				<ul class="mt-4 space-y-2 text-sm text-ink-800">
 					<li>Duration: {data.anime.duration ?? 'Unknown'}</li>
 					<li>Source: {data.anime.source ?? 'Unknown'}</li>
@@ -67,12 +68,16 @@ const { data }: { data: PageData } = $props()
 			</div>
 
 			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
-				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Future product hooks</p>
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Good to know before you start</p>
 				<ul class="mt-4 space-y-2 text-sm text-ink-800">
-					<li>Canonical DB sync target</li>
-					<li>Rubric-based rating target</li>
-					<li>Checklist and list inclusion target</li>
-					<li>Tournament seed candidate</li>
+					<li>Studios: {data.anime.studios.length > 0 ? data.anime.studios.slice(0, 2).join(', ') : 'Still being filled in'}</li>
+					<li>Themes: {data.anime.themes.length > 0 ? data.anime.themes.slice(0, 2).join(', ') : 'Varied'}</li>
+					<li>Audience: {data.anime.demographics.length > 0 ? data.anime.demographics.join(', ') : 'General anime audience'}</li>
+					<li>
+						<a class="font-semibold text-coral-400 hover:text-coral-400/80" href={data.anime.broadcastDay ? `/anime/schedule?day=${data.anime.broadcastDay.toLowerCase()}` : '/anime/schedule'}>
+							See where it lands in the schedule
+						</a>
+					</li>
 				</ul>
 			</div>
 		</div>

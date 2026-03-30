@@ -67,6 +67,7 @@ export type AnimeCard = {
 	rank: number | null
 	year: number | null
 	season: string | null
+	broadcastDay: string | null
 	broadcastLabel: string | null
 	genres: string[]
 	percentComplete: number | null
@@ -138,6 +139,7 @@ export function normalizeAnimeCard(anime: JikanAnime): AnimeCard {
 		rank: anime.rank ?? null,
 		year: anime.year ?? null,
 		season: anime.season ?? null,
+		broadcastDay: anime.broadcast?.day ?? null,
 		broadcastLabel: anime.broadcast?.string ?? null,
 		genres: anime.genres?.map((genre) => genre.name) ?? [],
 		percentComplete: computePercentComplete(anime),

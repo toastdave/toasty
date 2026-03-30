@@ -5,11 +5,11 @@ import type { PageData } from './$types'
 const { data }: { data: PageData } = $props()
 
 const futureTracks = [
-	'Anime-first discovery',
-	'Multi-axis ratings',
-	'Checklist and list-making',
-	'Year-end tournament mode',
-	'Expansion into other media',
+	'Faster seasonal browsing',
+	'Personal watch queues',
+	'Big editorial-style lists',
+	'Year-end bracket season',
+	'More media beyond anime',
 ]
 </script>
 
@@ -26,11 +26,11 @@ const futureTracks = [
 		</div>
 
 		<h1 class="mt-6 max-w-3xl font-display text-5xl leading-none tracking-tight text-ink-950 sm:text-6xl">
-			Charts, schedules, and a long road to yearly anime bracket warfare.
+			Your next anime night starts with charts, schedules, and zero digging.
 		</h1>
 		<p class="mt-5 max-w-2xl text-lg leading-8 text-ink-700">
-			Toasty starts with a fast anime discovery loop and grows toward rich ratings,
-			personal lists, and the kind of annual tournament arc that should ruin group chats.
+			Toasty helps you scan the all-timers, keep up with what is airing right now, and find the
+			show that actually fits tonight.
 		</p>
 
 		<div class="mt-8 flex flex-wrap gap-3">
@@ -44,7 +44,7 @@ const futureTracks = [
 	</div>
 
 	<div class="rounded-[2rem] border border-black/8 bg-ink-950 p-8 text-cream-50 shadow-[0_24px_100px_-52px_rgba(18,23,34,0.8)]">
-		<p class="text-sm uppercase tracking-[0.28em] text-mango-300">Future tracks</p>
+		<p class="text-sm uppercase tracking-[0.28em] text-mango-300">Coming next</p>
 		<ul class="mt-5 space-y-3 text-sm leading-7 text-cream-50/90">
 			{#each futureTracks as track}
 				<li>{track}</li>
@@ -64,13 +64,24 @@ const futureTracks = [
 		</div>
 
 		<div class="mt-6 grid gap-4 sm:grid-cols-2">
-			{#each data.heroAnime as anime}
-				<a class="rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-4 hover:border-coral-400/60 hover:bg-white" href={`/anime/${anime.slug}`}>
-					<p class="text-xs uppercase tracking-[0.2em] text-ink-700">#{anime.rank ?? ' - '} ranked</p>
-					<h3 class="mt-2 text-lg font-semibold text-ink-950">{anime.title}</h3>
-					<p class="mt-2 text-sm text-ink-700">Score {anime.score ?? 'TBD'}{anime.type ? ` • ${anime.type}` : ''}</p>
-				</a>
-			{/each}
+			{#if data.heroAnime.length > 0}
+				{#each data.heroAnime as anime}
+					<a class="flex gap-4 rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-4 hover:border-coral-400/60 hover:bg-white" href={`/anime/${anime.slug}`}>
+						{#if anime.posterUrl}
+							<img alt={anime.title} class="h-24 w-[4.25rem] rounded-2xl border border-black/8 object-cover" src={anime.posterUrl} />
+						{/if}
+						<div class="min-w-0">
+							<p class="text-xs uppercase tracking-[0.2em] text-ink-700">#{anime.rank ?? ' - '} ranked</p>
+							<h3 class="mt-2 line-clamp-2 text-lg font-semibold text-ink-950">{anime.title}</h3>
+							<p class="mt-2 text-sm text-ink-700">Score {anime.score ?? 'TBD'}{anime.type ? ` • ${anime.type}` : ''}</p>
+						</div>
+					</a>
+				{/each}
+			{:else}
+				<div class="rounded-[1.5rem] border border-dashed border-black/10 bg-cream-50/60 p-5 text-sm leading-7 text-ink-700 sm:col-span-2">
+					The chart is warming up. Check back in a moment or jump straight into the current schedule.
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -84,17 +95,23 @@ const futureTracks = [
 		</div>
 
 		<div class="mt-6 space-y-3">
-			{#each data.airingNow as anime}
-				<a class="flex items-center justify-between gap-4 rounded-[1.25rem] border border-black/8 bg-cream-50/70 px-4 py-3 hover:border-sky-300/70 hover:bg-white" href={`/anime/${anime.slug}`}>
-					<div>
-						<h3 class="font-semibold text-ink-950">{anime.title}</h3>
-						<p class="text-sm text-ink-700">{anime.broadcastLabel ?? anime.status ?? 'Schedule pending'}</p>
-					</div>
-					<span class="text-sm font-semibold text-ink-800">
-						{anime.percentComplete !== null ? `${anime.percentComplete}%` : 'TBD'}
-					</span>
-				</a>
-			{/each}
+			{#if data.airingNow.length > 0}
+				{#each data.airingNow as anime}
+					<a class="flex items-center justify-between gap-4 rounded-[1.25rem] border border-black/8 bg-cream-50/70 px-4 py-3 hover:border-sky-300/70 hover:bg-white" href={`/anime/${anime.slug}`}>
+						<div>
+							<h3 class="font-semibold text-ink-950">{anime.title}</h3>
+							<p class="text-sm text-ink-700">{anime.broadcastLabel ?? anime.status ?? 'Schedule pending'}</p>
+						</div>
+						<span class="text-sm font-semibold text-ink-800">
+							{anime.percentComplete !== null ? `${anime.percentComplete}%` : 'Pending'}
+						</span>
+					</a>
+				{/each}
+			{:else}
+				<div class="rounded-[1.5rem] border border-dashed border-black/10 bg-cream-50/60 p-5 text-sm leading-7 text-ink-700">
+					No seasonal schedule is available right now. The top chart is still a good place to start.
+				</div>
+			{/if}
 		</div>
 	</div>
 </section>
