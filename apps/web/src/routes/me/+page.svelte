@@ -20,6 +20,14 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			<p class="mt-4 text-base leading-7 text-ink-700">
 				This is the first signed-in Toasty loop: save titles from any anime page, return to what is in progress, and keep your completed queue visible.
 			</p>
+			<div class="mt-5 flex flex-wrap gap-3">
+				<a class="rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={data.publicProfilePath}>
+					View public profile
+				</a>
+				<p class="flex items-center rounded-full border border-black/8 bg-white/80 px-4 py-3 text-sm text-ink-700">
+					Public handle: <span class="ml-2 font-semibold text-ink-950">@{data.publicHandle}</span>
+				</p>
+			</div>
 		</div>
 
 		<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 px-5 py-4 text-sm text-ink-700">

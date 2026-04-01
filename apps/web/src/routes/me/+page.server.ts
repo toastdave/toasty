@@ -1,5 +1,7 @@
 import { normalizeRedirectTo } from '$lib/auth/redirects'
 import { listTrackedAnime } from '$lib/server/checklists'
+import { ensureUserHandle } from '$lib/server/profiles'
+import { buildProfilePath } from '$lib/utils/profiles'
 import { redirect } from '@sveltejs/kit'
 import type { PageServerLoad } from './$types'
 
@@ -11,5 +13,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		)
 	}
 
-	return listTrackedAnime(locals.user.id)
+	const publicHandle = await ensureUserHandle(locals.user.id, locals.user.name)
+	const trackedAnime = await listTrackedAnime(locals.user.id)
+
+	return {
+		...trackedAnime,
+		publicHandle,
+		publicProfilePath: buildProfilePath(publicHandle),
+	}
 }

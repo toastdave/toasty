@@ -26,7 +26,7 @@
 
 - checklist tracking [done]
 - lightweight saved or tracked-anime page [done]
-- public profile shell [next]
+- public profile shell [done]
 - aggregate score computation [later, after the rating system plan lands]
 
 ## Phase 4 - Ratings system
@@ -53,4 +53,4 @@
 
 ## Current recommendation
 
-The next implementation sprint should focus on a public profile shell, better operational control over anime sync behavior, and a lightweight activity layer powered by tracked titles.
+The next implementation sprint should focus on better operational control over anime sync behavior, a lightweight activity layer powered by tracked titles, and basic profile customization.

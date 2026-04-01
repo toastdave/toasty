@@ -56,9 +56,9 @@ async function signOut() {
 						</a>
 					{/each}
 					{#if data.user}
-						<span class="rounded-full border border-black/8 bg-white/80 px-4 py-2 text-ink-950">
+						<a class="rounded-full border border-black/8 bg-white/80 px-4 py-2 text-ink-950 hover:bg-cream-100" href="/me">
 							{data.user.name}
-						</span>
+						</a>
 						<button class="rounded-full bg-ink-950 px-4 py-2 text-cream-50 hover:bg-ink-800" onclick={signOut} type="button">
 							Sign out
 						</button>
