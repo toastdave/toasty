@@ -7,10 +7,11 @@ import type { Snippet } from 'svelte'
 import type { LayoutData } from './$types'
 
 const { data, children }: { data: LayoutData; children: Snippet } = $props()
-const navItems = [
+const navItems = $derived([
 	{ href: '/anime/top', label: 'Top anime' },
 	{ href: '/anime/schedule', label: 'Schedule' },
-]
+	...(data.user ? [{ href: '/me', label: 'My anime' }] : []),
+])
 const signInHref = $derived(`/auth/sign-in?redirectTo=${encodeURIComponent(page.url.pathname)}`)
 
 async function signOut() {

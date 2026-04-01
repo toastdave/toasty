@@ -4,6 +4,13 @@
 
 Ratings are intentionally deferred for now. The app should focus on working, polished discovery and a simple signed-in utility loop before the larger rating system lands.
 
+Checklist tracking is now live on anime detail pages with four starter states:
+
+- planned
+- in progress
+- done
+- abandoned
+
 ## Rating system shape
 
 - rubric-driven by media type
@@ -23,13 +30,6 @@ Ratings are intentionally deferred for now. The app should focus on working, pol
 - comfort
 - recommendation strength
 
-## Checklist states
-
-- planned
-- in progress
-- done
-- abandoned
-
 ## Next non-rating user loop
 
-The first signed-in utility feature should be checklist tracking on anime detail pages, followed by a simple saved/profile surface.
+The first signed-in utility feature is now checklist tracking on anime detail pages. The next slice should build on that data with a public profile shell and later activity around completed anime.

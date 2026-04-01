@@ -1,7 +1,15 @@
 <script lang="ts">
-import type { PageData } from './$types'
+import { page } from '$app/state'
+import { checklistStatuses, getChecklistStatusMeta } from '$lib/checklists'
+import type { ActionData, PageData } from './$types'
 
-const { data }: { data: PageData } = $props()
+const { data, form }: { data: PageData; form: ActionData } = $props()
+const signInHref = $derived(
+	`/auth/sign-in?redirectTo=${encodeURIComponent(`${page.url.pathname}${page.url.search}`)}`
+)
+const activeChecklistMeta = $derived(
+	data.checklistEntry ? getChecklistStatusMeta(data.checklistEntry.status) : null
+)
 </script>
 
 <svelte:head>
@@ -43,8 +51,79 @@ const { data }: { data: PageData } = $props()
 			<p class="mt-3 text-base text-ink-700">{data.anime.secondaryTitle}</p>
 		{/if}
 
+		<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Personal checklist</p>
+					{#if data.user}
+						<h2 class="mt-2 text-xl font-semibold text-ink-950">
+							{activeChecklistMeta ? activeChecklistMeta.label : 'Start your personal watch queue'}
+						</h2>
+						<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+							{activeChecklistMeta ? activeChecklistMeta.description : getChecklistStatusMeta('planned').emptyHeading}
+						</p>
+					{:else}
+						<h2 class="mt-2 text-xl font-semibold text-ink-950">Track what you want to watch next</h2>
+						<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+							Sign in to build a running queue, mark active watches, and keep finished anime close at hand.
+						</p>
+					{/if}
+				</div>
+
+				{#if data.user && data.checklistEntry}
+					<a class="rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-semibold text-ink-800 hover:bg-cream-100" href="/me">
+						View my anime
+					</a>
+				{/if}
+			</div>
+
+			{#if data.user}
+				<form class="mt-5" method="POST">
+					<div class="grid gap-3 sm:grid-cols-2">
+						{#each checklistStatuses as status (status)}
+							{@const meta = getChecklistStatusMeta(status)}
+							<button
+								class={`rounded-[1.25rem] border px-4 py-4 text-left transition-colors ${data.checklistEntry?.status === status ? 'border-ink-950 bg-ink-950 text-cream-50' : 'border-black/8 bg-white text-ink-900 hover:bg-cream-100'}`}
+								name="status"
+								type="submit"
+								value={status}
+							>
+								<span class="block text-sm font-semibold">{meta.actionLabel}</span>
+								<span class={`mt-2 block text-sm leading-6 ${data.checklistEntry?.status === status ? 'text-cream-50/85' : 'text-ink-700'}`}>
+									{meta.description}
+								</span>
+							</button>
+						{/each}
+					</div>
+
+					<div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-ink-700">
+						{#if data.checklistEntry}
+							<p>
+								Currently marked as <span class="font-semibold text-ink-950">{activeChecklistMeta?.label}</span>.
+							</p>
+							<button class="rounded-full border border-black/8 px-4 py-2 font-semibold text-ink-800 hover:bg-white" name="intent" type="submit" value="clear">
+								Remove from my list
+							</button>
+						{:else}
+							<p>Choose a state to start tracking this anime.</p>
+						{/if}
+					</div>
+				</form>
+			{:else}
+				<div class="mt-5">
+					<a class="inline-flex rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={signInHref}>
+						Sign in to track this anime
+					</a>
+				</div>
+			{/if}
+
+			{#if form?.message}
+				<p class="mt-4 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</p>
+			{/if}
+		</div>
+
 		<div class="mt-6 flex flex-wrap gap-2 text-sm font-medium text-ink-800">
-			{#each data.anime.genres as genre}
+			{#each data.anime.genres as genre (genre)}
 				<span class="rounded-full bg-cream-100 px-3 py-1">{genre}</span>
 			{/each}
 		</div>

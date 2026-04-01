@@ -7,8 +7,9 @@ Profiles should eventually become the personal home base for a user's ratings, t
 ## Current posture
 
 - auth exists and users can sign in and sign out
-- there is not yet a meaningful signed-in destination beyond discovery
-- the next priority is a lightweight saved or tracked-anime profile shell, not a full social graph
+- users can now track anime from detail pages
+- a lightweight signed-in tracked-anime destination exists at `/me`
+- the next priority is a lightweight public profile shell, not a full social graph
 
 ## Lists goals
 

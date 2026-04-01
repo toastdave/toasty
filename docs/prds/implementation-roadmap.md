@@ -24,8 +24,8 @@
 
 ## Phase 3 - Signed-in utility loop
 
-- checklist tracking [next]
-- lightweight saved or tracked-anime page [next]
+- checklist tracking [done]
+- lightweight saved or tracked-anime page [done]
 - public profile shell [next]
 - aggregate score computation [later, after the rating system plan lands]
 
@@ -53,4 +53,4 @@
 
 ## Current recommendation
 
-The next implementation sprint should focus on checklist tracking, a small signed-in destination, and better operational control over anime sync behavior.
+The next implementation sprint should focus on a public profile shell, better operational control over anime sync behavior, and a lightweight activity layer powered by tracked titles.
