@@ -21,36 +21,57 @@
 - cached trending snapshots [done]
 - stale-aware detail refresh [done]
 - manual or operator-triggered sync controls [next]
+- generic source-adapter contract for future TV and movie ingestion [next]
 
 ## Phase 3 - Signed-in utility loop
 
 - checklist tracking [done]
 - lightweight saved or tracked-anime page [done]
 - public profile shell [done]
-- aggregate score computation [later, after the rating system plan lands]
+- public activity basics [next]
+- profile customization basics [next]
 
-## Phase 4 - Ratings system
+## Phase 4 - Ratings foundation
 
-- rubric seeds [partially done]
-- user ratings [deferred]
-- axis score inputs [deferred]
-- aggregate score computation [deferred]
-- vibe badge presentation [deferred]
+- universal core dimensions across anime, TV, and movies [next]
+- flavor profile dimensions such as action, romance, comedy, and tension [next]
+- optional format-specific nuance [next]
+- single-page rich rating canvas with partial save [next]
+- aggregate comparable score built from the universal core [later in phase]
+- public taste signature outputs [later in phase]
 
-## Phase 5 - Identity and curation
+## Phase 5 - Recommendation intelligence
 
-- official lists
-- personal lists
-- lightweight activity feed
+- related-title detail modules [next]
+- because-you-tracked shelves [next]
+- explainable recommendation copy [next]
+- rating-aware recommendations [later in phase]
+- deeper profile-based personalization [later in phase]
 
-## Phase 6 - Tournaments
+## Phase 6 - Multi-media expansion
 
-- yearly rankings
-- seeding pipeline
-- bracket generation
-- matchup voting
-- historical archive views
+- TV show adapter and browse lane [later]
+- movie adapter and browse lane [later]
+- cross-media discover hub [later]
+- cross-media recommendation bridges [later]
+
+## Phase 7 - Identity and curation
+
+- official lists [later]
+- personal lists [later]
+- stronger activity feed [later]
+- recommendation-friendly collections [later]
+
+## Phase 8 - Tournaments
+
+- yearly eligibility rules [next]
+- seeding snapshot pipeline [next]
+- official seeding page [later in phase]
+- bracket generation [later in phase]
+- matchup voting [later in phase]
+- rankings, points, and accuracy [later]
+- historical archive views [later in phase]
 
 ## Current recommendation
 
-The next implementation sprint should focus on better operational control over anime sync behavior, a lightweight activity layer powered by tracked titles, and basic profile customization.
+The next implementation sprint should focus on sync controls, the finalized rating-system contract, recommendation-ready discovery modules, tournament setup rules, and lightweight profile activity/customization.

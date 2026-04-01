@@ -2,17 +2,28 @@
 
 ## Primary pages
 
-- landing page
-- top anime all time
+- home or discover hub
+- top charts
 - current release schedule
-- anime detail page
+- title detail page
+- recommendation shelves and related-title modules
 
 ## Discovery principles
 
 1. Make the first screen useful immediately.
 2. Show chart context, not just poster grids.
-3. Support seasonal browsing and day-based schedule scanning.
+3. Explain why something is worth opening.
 4. Be explicit when schedule or progress data is incomplete.
+5. Let recommendation intelligence feel helpful, not mysterious.
+
+## Interface posture
+
+Discovery pages should stay calm, premium, and hospitality-like.
+
+- warm surfaces and clear hierarchy
+- strong typography and spacious layout
+- expressive charts and accent moments only where they add value
+- recommendation and tournament modules can carry more personality than the base browse shell
 
 ## Current implementation state
 
@@ -22,20 +33,50 @@
 - anime detail pages have canonical slug redirects and stronger cross-links back into discovery
 - shared error handling exists for broken routes and temporary load failures
 
+## Near-term evolution
+
+The discovery surface should evolve from a small set of browse pages into a richer home for recommendation and chart context.
+
+### Planned modules
+
+- featured spotlight hero
+- weekly risers and notable momentum shifts
+- compact data or metrics modules that explain what is trending
+- related-title rails on detail pages
+- recommendation shelves such as `because you tracked`, `because you rated high on`, and editorial picks
+
+## Cross-media expansion rules
+
+- anime remains the launch category and strongest browse lane
+- TV shows should arrive as the next adjacent lane
+- movies should follow once browse, ratings, and recommendation logic can support them cleanly
+- do not rush into one giant mixed-media browse feed before each lane is useful on its own
+
 ## Percent complete
 
-The MVP may show a progress estimate only when the data is dependable. Preferred order:
+Progress estimates should remain format-aware. Preferred order:
 
-1. episode-based progress when episode totals and released episodes are known
+1. episode-based progress when totals and released episodes are known
 2. date-window progress when start and end dates exist
 3. no percentage when neither is trustworthy
+
+This behavior applies mainly to anime and episodic TV. Movies should not inherit fake progress UI just for consistency.
 
 ## Dub schedule stance
 
 Dub release schedules stay out of the MVP unless a dependable source is added. Jikan alone is not enough.
 
-## Near-term polish backlog
+## Recommendation entry points
+
+Recommendation work should begin inside discovery rather than as a separate hidden system.
+
+- detail page related titles
+- because-you-tracked shelves on home and profile surfaces
+- editorial or trend-assisted picks
+- weekly ranked movement and breakout callouts
+
+## Immediate polish backlog
 
 - add richer browse filters beyond day tabs
 - improve fallback messaging for source outages and rate limits
-- add lightweight related-anime and editorial discovery loops on detail pages
+- add recommendation-ready detail modules instead of static dead-end pages
