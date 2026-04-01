@@ -1,8 +1,8 @@
 # Ratings And Checklists
 
-## Future loop
+## Current posture
 
-After discovery proves out, users should be able to log anime and rate it with richer signals than a single score.
+Ratings are intentionally deferred for now. The app should focus on working, polished discovery and a simple signed-in utility loop before the larger rating system lands.
 
 ## Rating system shape
 
@@ -29,3 +29,7 @@ After discovery proves out, users should be able to log anime and rate it with r
 - in progress
 - done
 - abandoned
+
+## Next non-rating user loop
+
+The first signed-in utility feature should be checklist tracking on anime detail pages, followed by a simple saved/profile surface.

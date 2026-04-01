@@ -11,6 +11,8 @@ We still keep canonical anime records in our own database:
 - `media_items` for cross-media identity
 - `anime_details` for anime-specific metadata
 - `external_source_items` for source mappings, raw payloads, and fetch timestamps
+- `trend_snapshots` and `trend_snapshot_items` for cached chart and schedule views
+- `ingest_jobs` for sync visibility and failure recovery
 
 ## Sync rules
 
@@ -20,8 +22,16 @@ We still keep canonical anime records in our own database:
 4. Copy only actively used fields into canonical columns.
 5. Save remote poster image URLs in v1 rather than downloading binaries.
 
+## Current implementation state
+
+- top anime and current season feeds sync into the canonical catalog
+- detail pages can read from stored anime detail records
+- trend pages prefer cached snapshots and fall back to live Jikan requests if needed
+- anime detail pages use stale-aware refresh behavior instead of forcing a sync on every request
+- failed syncs are logged as ingest jobs
+
 ## Data freshness
 
-- top charts and schedules can refresh on a short cadence
-- item details can refresh lazily on view or through scheduled sync
-- failed syncs should be logged as ingest jobs for recovery
+- top charts and schedules refresh on a short cadence through the catalog service
+- item details refresh lazily when cached detail records age out
+- failed syncs should remain recoverable through repeat sync attempts and future manual admin controls

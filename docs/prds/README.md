@@ -12,3 +12,4 @@ This directory keeps the long-range planning docs for Toasty. The app starts ani
 - `05-lists-profiles-and-social.md` - profile shape, lists, and social-lite roadmap
 - `06-tournaments-and-year-end-mode.md` - yearly ranking, seeding, bracket flow, and voting
 - `implementation-roadmap.md` - phased delivery plan
+- `07-current-state-and-next-sprint.md` - snapshot of shipped work and the immediate non-rating backlog
