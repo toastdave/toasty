@@ -33,12 +33,12 @@
 
 ## Phase 4 - Ratings foundation
 
-- universal core dimensions across anime, TV, and movies [next]
-- flavor profile dimensions such as action, romance, comedy, and tension [next]
-- optional format-specific nuance [next]
-- single-page rich rating canvas with partial save [next]
-- aggregate comparable score built from the universal core [later in phase]
-- public taste signature outputs [later in phase]
+- universal core dimensions across anime, TV, and movies [done in first anime-only form]
+- flavor profile dimensions such as action, romance, comedy, and tension [done in first anime-only form]
+- optional format-specific nuance [partially done through flavor-first anime fields]
+- single-page rich rating canvas with partial save [done in first anime-only form]
+- aggregate comparable score built from the universal core [next]
+- public taste signature outputs [next]
 
 ## Phase 5 - Recommendation intelligence
 

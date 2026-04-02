@@ -33,6 +33,7 @@ Discovery pages should stay calm, premium, and hospitality-like.
 - anime detail pages have canonical slug redirects and stronger cross-links back into discovery
 - signed-in users now see a `because you tracked` recommendation shelf on the home page when enough catalog overlap exists
 - anime detail pages now surface related-title recommendations based on shared genre overlap and nearby metadata affinity
+- anime detail pages now link into a single-page rating canvas for signed-in users
 - shared error handling exists for broken routes and temporary load failures
 
 ## Near-term evolution

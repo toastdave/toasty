@@ -11,7 +11,15 @@ Checklist states:
 - done
 - abandoned
 
-Ratings are no longer treated as a vague future add-on. They are now a core differentiator, but they should launch only after the system is clearly defined and comparably useful across anime, TV shows, and movies.
+Ratings are no longer treated as a vague future add-on. They are now a core differentiator.
+
+The first shipped slice is anime-only and includes:
+
+- a single-page rating canvas at `/anime/[slug]/rate`
+- stored axis scores per user
+- a Toasty overall score derived from the core dimensions
+- optional flavor scores such as action, romance, comedy, tension, and spectacle
+- profile and detail-page surfaces that show early rating outputs
 
 ## Rating system goals
 
@@ -81,12 +89,16 @@ The rating UI should use a single rich page or sheet per title.
 
 This should feel like a taste canvas, not a wizard.
 
+The current anime implementation now follows this direction directly with a single-page route.
+
 ## Completion rules
 
 - a rating can be saved with only the universal core dimensions filled out
 - flavor dimensions are optional but strongly encouraged
 - format-specific nuance remains optional
 - text reactions or reviews can remain optional and arrive later if needed
+
+This is now true in the first anime flow: core dimensions are required, flavor dimensions are optional, and a short written note is optional.
 
 ## Rating outputs
 
@@ -101,6 +113,15 @@ Possible outputs:
 - a public taste signature on profile pages
 
 The public presentation can feel fun, but the underlying model should remain understandable and defensible.
+
+## Current implementation posture
+
+The current rating implementation is still anime-first and does not yet deliver the full cross-media contract.
+
+- anime uses universal-style core dimensions plus a first flavor set
+- profile surfaces now show rated-title count and average Toasty score
+- tracked-title cards can now show a stored Toasty score when one exists
+- aggregate community scores and recommendation-aware use of ratings are still next
 
 ## Relationship to recommendations
 

@@ -6,7 +6,7 @@ import {
 } from '$lib/checklists'
 import { db } from '$lib/server/db'
 import { syncJikanAnimeDetailCatalog } from '$lib/server/services/jikan/catalog'
-import { animeDetails, mediaItems, userChecklists } from '@toasty/db/schema'
+import { animeDetails, mediaItems, userChecklists, userRatings } from '@toasty/db/schema'
 import { and, desc, eq } from 'drizzle-orm'
 
 export type AnimeChecklistEntry = {
@@ -19,6 +19,7 @@ export type AnimeChecklistEntry = {
 export type TrackedAnime = {
 	broadcastLabel: string | null
 	episodes: number | null
+	overallRating: number | null
 	posterUrl: string | null
 	score: number | null
 	secondaryTitle: string | null
@@ -126,6 +127,7 @@ export async function listTrackedAnime(userId: string) {
 		.select({
 			broadcastLabel: animeDetails.broadcastLabel,
 			episodes: animeDetails.episodeCount,
+			overallRating: userRatings.overallScore,
 			posterUrl: mediaItems.imageUrlPoster,
 			score: animeDetails.sourceScore,
 			secondaryTitle: mediaItems.originalTitle,
@@ -139,6 +141,10 @@ export async function listTrackedAnime(userId: string) {
 		.from(userChecklists)
 		.innerJoin(mediaItems, eq(mediaItems.id, userChecklists.mediaItemId))
 		.leftJoin(animeDetails, eq(animeDetails.mediaItemId, mediaItems.id))
+		.leftJoin(
+			userRatings,
+			and(eq(userRatings.mediaItemId, mediaItems.id), eq(userRatings.userId, userId))
+		)
 		.where(eq(userChecklists.userId, userId))
 		.orderBy(desc(userChecklists.updatedAt), mediaItems.title)
 
@@ -161,6 +167,7 @@ export async function listTrackedAnime(userId: string) {
 		section.items.push({
 			broadcastLabel: row.broadcastLabel,
 			episodes: row.episodes,
+			overallRating: toNullableNumber(row.overallRating),
 			posterUrl: row.posterUrl,
 			score: toNullableNumber(row.score),
 			secondaryTitle: row.secondaryTitle,

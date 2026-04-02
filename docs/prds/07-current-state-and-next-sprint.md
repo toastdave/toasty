@@ -18,6 +18,7 @@ Toasty already has a credible public anime discovery surface:
 - a public anime seeding snapshot route backed by persisted yearly rankings
 - a generated anime bracket route backed by stored tournament entries and opening-round matchups
 - interactive tournament matchup pages with signed-in voting
+- an anime-only single-page rating canvas with stored axis scores and Toasty overall scores
 
 Under the hood, the anime catalog is persisted locally and refreshed from Jikan through normalized source adapters and cached snapshots.
 
@@ -44,10 +45,12 @@ The app still needs the underlying systems that make the broader vision real.
 - tournament setup now has a working snapshot-to-bracket-to-vote flow, but it still needs stricter official freeze rules, rerun controls, anti-abuse protections, and later-round progression
 - the app shell remains anime-first even though the schema is more general
 
+The largest remaining gap is that ratings are still anime-only and not yet connected back into recommendations, aggregates, or tournament seeding.
+
 ## Recommended next sprint
 
 1. manual sync controls or scripts for top anime and current season refreshes
-2. finalize the rating-system contract: universal core, flavor vectors, optional format-specific nuance, and single-page save rules
+2. expand the rating contract beyond the first anime flow into aggregates, richer profile outputs, and recommendation-aware signals
 3. deepen the new recommendation modules with stronger explanation and better candidate coverage
 4. harden the stored seeding, generated bracket, and live-vote flow with official freeze, rerun, publish, and anti-abuse rules
 5. add lightweight public activity and profile customization basics

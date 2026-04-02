@@ -1,5 +1,6 @@
 import { listTrackedAnime } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
+import { getUserRatingSnapshot } from '$lib/server/ratings'
 import { buildProfilePath, slugifyProfileHandle } from '$lib/utils/profiles'
 import { user } from '@toasty/db/schema'
 import { eq } from 'drizzle-orm'
@@ -70,6 +71,7 @@ export async function getPublicProfileByHandle(handle: string) {
 	}
 
 	const trackedAnime = await listTrackedAnime(profileUser.id)
+	const ratingSnapshot = await getUserRatingSnapshot(profileUser.id)
 
 	return {
 		bio: profileUser.bio,
@@ -78,6 +80,7 @@ export async function getPublicProfileByHandle(handle: string) {
 		image: profileUser.image,
 		name: profileUser.name,
 		profilePath: buildProfilePath(profileUser.handle),
+		ratingSnapshot,
 		sections: trackedAnime.sections,
 		total: trackedAnime.total,
 	}

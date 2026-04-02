@@ -35,6 +35,12 @@ Once ratings launch, profiles should surface:
 
 These outputs should feel playful, but they should always remain interpretable.
 
+The first shipped version now exposes a lighter rating identity layer:
+
+- rated-title count
+- average Toasty score
+- per-title Toasty scores on tracked cards when available
+
 ## Lists goals
 
 - official editorial lists

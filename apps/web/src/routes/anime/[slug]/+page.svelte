@@ -7,6 +7,9 @@ const { data, form }: { data: PageData; form: ActionData } = $props()
 const signInHref = $derived(
 	`/auth/sign-in?redirectTo=${encodeURIComponent(`${page.url.pathname}${page.url.search}`)}`
 )
+const rateSignInHref = $derived(
+	`/auth/sign-in?redirectTo=${encodeURIComponent(`/anime/${data.anime.slug}/rate`)}`
+)
 const activeChecklistMeta = $derived(
 	data.checklistEntry ? getChecklistStatusMeta(data.checklistEntry.status) : null
 )
@@ -120,6 +123,36 @@ const activeChecklistMeta = $derived(
 			{#if form?.message}
 				<p class="mt-4 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</p>
 			{/if}
+		</div>
+
+		<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Toasty rating</p>
+					<h2 class="mt-2 text-xl font-semibold text-ink-950">
+						{#if data.userRating?.overallScore !== null && data.userRating?.overallScore !== undefined}
+							Your take lands at {data.userRating.overallScore}
+						{:else}
+							Rate this anime with more than one number
+						{/if}
+					</h2>
+					<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+						{#if data.user}
+							{#if data.userRating?.tags && data.userRating.tags.length > 0}
+								Current flavor tags: {data.userRating.tags.join(', ')}.
+							{:else}
+								Save the core dimensions first, then add action, romance, comedy, and other flavor signals whenever you want more texture.
+							{/if}
+						{:else}
+							Sign in to build a richer Toasty score and shape future recommendations.
+						{/if}
+					</p>
+				</div>
+
+				<a class="rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={data.user ? `/anime/${data.anime.slug}/rate` : rateSignInHref}>
+					{data.user ? 'Open rating canvas' : 'Sign in to rate'}
+				</a>
+			</div>
 		</div>
 
 		<div class="mt-6 flex flex-wrap gap-2 text-sm font-medium text-ink-800">

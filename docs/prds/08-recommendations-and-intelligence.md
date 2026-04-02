@@ -88,7 +88,8 @@ The first recommendation slice is intentionally heuristic and anime-only.
 
 - home recommendations currently use the latest tracked anime as the anchor
 - detail-page recommendations currently rely on shared genre overlap and nearby metadata affinity
-- the system does not yet use user ratings, flavor vectors, or deeper completion behavior
+- the system now has first-party rating inputs available, but recommendations do not yet use them
+- the system does not yet use flavor vectors, aggregate community scores, or deeper completion behavior
 
 This is acceptable as long as the product explains the recommendation plainly and continues to improve as richer rating data ships.
 

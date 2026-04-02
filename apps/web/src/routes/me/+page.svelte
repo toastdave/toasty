@@ -35,6 +35,15 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 				Tracking <span class="font-semibold text-ink-950">{data.total}</span>
 				{data.total === 1 ? 'title' : 'titles'}
 			</p>
+			<p class="mt-2">
+				Rated <span class="font-semibold text-ink-950">{data.ratingSnapshot.ratedCount}</span>
+				{data.ratingSnapshot.ratedCount === 1 ? 'title' : 'titles'}
+			</p>
+			{#if data.ratingSnapshot.averageOverall !== null}
+				<p class="mt-2">
+					Average Toasty score <span class="font-semibold text-ink-950">{data.ratingSnapshot.averageOverall}</span>
+				</p>
+			{/if}
 		</div>
 	</div>
 
@@ -78,9 +87,14 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 												<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{anime.statusLabel}</p>
 												<h3 class="mt-2 line-clamp-2 text-lg font-semibold text-ink-950">{anime.title}</h3>
 											</div>
-											{#if anime.score !== null}
-												<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.score}</span>
-											{/if}
+											<div class="flex flex-wrap gap-2">
+												{#if anime.overallRating !== null}
+													<span class="rounded-full bg-coral-400 px-3 py-1 text-sm font-semibold text-cream-50">Toasty {anime.overallRating}</span>
+												{/if}
+												{#if anime.score !== null}
+													<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.score}</span>
+												{/if}
+											</div>
 										</div>
 
 										{#if anime.secondaryTitle}
