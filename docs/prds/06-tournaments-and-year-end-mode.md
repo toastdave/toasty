@@ -118,6 +118,14 @@ The first tournament UX should include:
 - rankings or status summary
 - historical archive entry point
 
+## Current implementation posture
+
+The first tournament setup slice is now live as an anime seeding preview.
+
+- the app can now project a year-based anime field from current catalog quality, popularity, and checklist engagement
+- a public seeding preview page exists at `/tournaments/anime/[year]`
+- the current preview is still heuristic and should evolve into a frozen yearly snapshot before it becomes official tournament history
+
 ## Release strategy
 
 Tournament setup work should begin before the full tournament UX exists.

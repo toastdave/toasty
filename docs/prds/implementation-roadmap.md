@@ -66,7 +66,7 @@
 
 - yearly eligibility rules [next]
 - seeding snapshot pipeline [next]
-- official seeding page [later in phase]
+- official seeding page [done in preview form, anime-first]
 - bracket generation [later in phase]
 - matchup voting [later in phase]
 - rankings, points, and accuracy [later]

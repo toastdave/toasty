@@ -96,6 +96,47 @@ const futureTracks = [
 	</section>
 {/if}
 
+{#if data.tournamentPreview}
+	<section class="mt-8 rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
+		<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+			<div class="max-w-3xl">
+				<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Tournament setup</p>
+				<h2 class="mt-2 font-display text-3xl text-ink-950">{data.tournamentPreview.year} anime seeding preview</h2>
+				<p class="mt-3 text-base leading-7 text-ink-700">
+					The first tournament layer is now live as a public preview: current catalog quality, popularity, and live checklist engagement combine into a projected bracket field.
+				</p>
+			</div>
+			<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href={`/tournaments/anime/${data.tournamentPreview.year}`}>
+				See full seeding
+			</a>
+		</div>
+
+		<div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			{#each data.tournamentPreview.seeds.slice(0, 4) as seed (seed.slug)}
+				<a class="rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-5 hover:border-coral-400/60 hover:bg-white" href={`/anime/${seed.slug}`}>
+					<div class="flex items-center justify-between gap-3">
+						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">#{seed.seed} • {seed.region}</p>
+						<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{seed.finalSeedScore}</span>
+					</div>
+					<div class="mt-4 flex gap-4">
+						{#if seed.posterUrl}
+							<img alt={seed.title} class="h-24 w-[4.25rem] rounded-2xl border border-black/8 object-cover" src={seed.posterUrl} />
+						{/if}
+
+						<div class="min-w-0">
+							<h3 class="line-clamp-2 text-lg font-semibold text-ink-950">{seed.title}</h3>
+							<p class="mt-2 text-sm text-ink-700">
+								{seed.ratingScore !== null ? `Quality ${seed.ratingScore}` : 'Score pending'}
+								{seed.engagementCount ? ` • ${seed.engagementCount} tracked` : ''}
+							</p>
+						</div>
+					</div>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}
+
 <section class="mt-8 grid gap-6 lg:grid-cols-2">
 	<div class="rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
 		<div class="flex items-center justify-between gap-3">
