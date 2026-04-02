@@ -43,7 +43,7 @@
 ## Phase 5 - Recommendation intelligence
 
 - related-title detail modules [done, heuristic anime-first]
-- because-you-tracked shelves [done on home, heuristic anime-first]
+- because-you-tracked shelves [done on home and profile pages, anime-first]
 - explainable recommendation copy [done in first flavor-aware form]
 - rating-aware recommendations [done in first anime-only form]
 - deeper profile-based personalization [later in phase]

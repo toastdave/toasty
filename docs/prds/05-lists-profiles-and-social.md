@@ -14,6 +14,7 @@ The first public shell is already live through shareable handle-based profile pa
 - a lightweight public profile shell exists at `/u/[handle]`
 - profile pages now expose a first taste-signature layer through dominant tags and strongest rating dimensions
 - lightweight public activity now ships for rating saves, completions, and tournament votes
+- profile pages now expose a first likely-next-picks shelf based on tracked and rated anime
 - the next priority is profile customization and deeper identity, not a heavy social graph
 
 ## Profile evolution

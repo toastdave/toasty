@@ -7,6 +7,24 @@ const { data }: { data: PageData } = $props()
 const dateFormatter = new Intl.DateTimeFormat('en', {
 	dateStyle: 'medium',
 })
+
+function resolveProfilePath(path: string) {
+	return resolve(path as `/u/${string}`)
+}
+
+function resolveActivityPath(path: string | null, fallback: string) {
+	const nextPath = path ?? fallback
+
+	if (nextPath.startsWith('/anime/')) {
+		return resolve('/anime/[slug]', { slug: nextPath.slice('/anime/'.length) })
+	}
+
+	if (nextPath.startsWith('/tournaments/anime/')) {
+		return resolve(nextPath as `/tournaments/anime/${string}`)
+	}
+
+	return resolveProfilePath(nextPath)
+}
 </script>
 
 <svelte:head>
@@ -22,7 +40,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 				This is the first signed-in Toasty loop: save titles from any anime page, return to what is in progress, and keep your completed queue visible.
 			</p>
 			<div class="mt-5 flex flex-wrap gap-3">
-				<a class="rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={resolve(data.publicProfilePath)}>
+				<a class="rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={resolveProfilePath(data.publicProfilePath)}>
 					View public profile
 				</a>
 				<p class="flex items-center rounded-full border border-black/8 bg-white/80 px-4 py-3 text-sm text-ink-700">
@@ -87,7 +105,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Recent activity</p>
 					<h2 class="mt-2 text-2xl font-semibold text-ink-950">Your public profile pulse.</h2>
 				</div>
-				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={resolve(data.publicProfilePath)}>
+				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={resolveProfilePath(data.publicProfilePath)}>
 					Open profile
 				</a>
 			</div>
@@ -95,7 +113,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			{#if data.activity.length > 0}
 				<div class="mt-5 space-y-3">
 					{#each data.activity as item (item.id)}
-						<a class="block rounded-[1.15rem] border border-black/8 bg-white/90 px-4 py-4 hover:border-coral-400/50 hover:bg-white" href={resolve(item.href ?? data.publicProfilePath)}>
+						<a class="block rounded-[1.15rem] border border-black/8 bg-white/90 px-4 py-4 hover:border-coral-400/50 hover:bg-white" href={resolveActivityPath(item.href, data.publicProfilePath)}>
 							<div class="flex items-start justify-between gap-3">
 								<div class="min-w-0">
 									<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{item.label}</p>
@@ -114,6 +132,52 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			{/if}
 		</div>
 	</div>
+
+	{#if data.recommendationShelf}
+		<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-6">
+			<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+				<div class="max-w-3xl">
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Recommended next</p>
+					<h2 class="mt-2 text-2xl font-semibold text-ink-950">{data.recommendationShelf.heading}</h2>
+					<p class="mt-3 text-sm leading-6 text-ink-700">{data.recommendationShelf.description}</p>
+				</div>
+				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={resolve('/anime/top')}>
+					Browse top anime
+				</a>
+			</div>
+
+			<div class="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+				{#each data.recommendationShelf.items as anime (anime.slug)}
+					<a class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/50 hover:bg-white" href={resolve('/anime/[slug]', { slug: anime.slug })}>
+						<div class="flex gap-4">
+							{#if anime.posterUrl}
+								<img alt={anime.title} class="h-28 w-20 rounded-[1.1rem] border border-black/8 object-cover" src={anime.posterUrl} />
+							{/if}
+
+							<div class="min-w-0 flex-1">
+								<div class="flex items-start justify-between gap-4">
+									<div>
+										<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{anime.matchReason}</p>
+										<h3 class="mt-2 line-clamp-2 text-lg font-semibold text-ink-950">{anime.title}</h3>
+									</div>
+									{#if anime.score !== null}
+										<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.score}</span>
+									{/if}
+								</div>
+
+								<p class="mt-3 text-sm text-ink-700">
+									{anime.type ?? 'Anime'}{anime.year ? ` • ${anime.year}` : ''}
+								</p>
+								<p class="mt-4 line-clamp-3 text-sm leading-6 text-ink-700">
+									{anime.synopsis ?? 'Open the detail page to see why this one fits your lane.'}
+								</p>
+							</div>
+						</div>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
 
 	{#if data.total > 0}
 		<div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

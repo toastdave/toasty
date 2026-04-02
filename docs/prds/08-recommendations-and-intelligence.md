@@ -74,7 +74,7 @@ Avoid empty copy like `recommended for you` unless the system can say more.
 
 - related-title modules on detail pages [partially shipped]
 - editorial or trend-assisted shelves [not shipped]
-- because-you-tracked rows on home and profile pages [home partially shipped]
+- because-you-tracked rows on home and profile pages [partially shipped]
 
 ### Stage 2 - Rating-aware recommendations
 
@@ -87,6 +87,7 @@ Avoid empty copy like `recommended for you` unless the system can say more.
 The first recommendation slice is still anime-only, but it is no longer purely heuristic.
 
 - home recommendations can now anchor on a user's strongest positive anime rating before falling back to latest tracked anime
+- profile pages can now surface the same first personalized shelf for public taste inspection
 - detail-page recommendations can now use a signed-in user's rating on the current anime to personalize the shelf
 - recommendation reasons now surface taste-lane language when flavor tags line up with candidate genres
 - the system still does not use aggregate community scores, richer completion patterns, or cross-media signals

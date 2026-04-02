@@ -2,6 +2,7 @@ import { listUserActivity } from '$lib/server/activity'
 import { listTrackedAnime } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import { getUserRatingSnapshot } from '$lib/server/ratings'
+import { getHomeTrackedAnimeRecommendationShelf } from '$lib/server/recommendations'
 import { buildProfilePath, slugifyProfileHandle } from '$lib/utils/profiles'
 import { user } from '@toasty/db/schema'
 import { eq } from 'drizzle-orm'
@@ -71,8 +72,9 @@ export async function getPublicProfileByHandle(handle: string) {
 		return null
 	}
 
-	const [activity, trackedAnime, ratingSnapshot] = await Promise.all([
+	const [activity, recommendationShelf, trackedAnime, ratingSnapshot] = await Promise.all([
 		listUserActivity(profileUser.id),
+		getHomeTrackedAnimeRecommendationShelf(profileUser.id),
 		listTrackedAnime(profileUser.id),
 		getUserRatingSnapshot(profileUser.id),
 	])
@@ -85,6 +87,7 @@ export async function getPublicProfileByHandle(handle: string) {
 		image: profileUser.image,
 		name: profileUser.name,
 		profilePath: buildProfilePath(profileUser.handle),
+		recommendationShelf,
 		ratingSnapshot,
 		sections: trackedAnime.sections,
 		total: trackedAnime.total,
