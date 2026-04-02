@@ -65,8 +65,8 @@
 ## Phase 8 - Tournaments
 
 - yearly eligibility rules [next]
-- seeding snapshot pipeline [next]
-- official seeding page [done in preview form, anime-first]
+- seeding snapshot pipeline [done in first stored form, anime-first]
+- official seeding page [done in first form, anime-first]
 - bracket generation [later in phase]
 - matchup voting [later in phase]
 - rankings, points, and accuracy [later]

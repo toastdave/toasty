@@ -120,11 +120,12 @@ The first tournament UX should include:
 
 ## Current implementation posture
 
-The first tournament setup slice is now live as an anime seeding preview.
+The first tournament setup slice is now live as an anime seeding snapshot.
 
-- the app can now project a year-based anime field from current catalog quality, popularity, and checklist engagement
-- a public seeding preview page exists at `/tournaments/anime/[year]`
-- the current preview is still heuristic and should evolve into a frozen yearly snapshot before it becomes official tournament history
+- the app can now project and persist a year-based anime field from current catalog quality, popularity, and checklist engagement
+- a public seeding snapshot page exists at `/tournaments/anime/[year]`
+- yearly rankings now act as the first persisted seeding-snapshot backbone for anime tournaments
+- the current snapshot is still heuristic and should evolve toward stricter official freeze rules before it becomes final tournament history
 
 ## Release strategy
 
@@ -133,7 +134,7 @@ Tournament setup work should begin before the full tournament UX exists.
 Recommended order:
 
 1. finalize annual rules and seeding inputs
-2. build snapshot and generation tooling
+2. harden the new snapshot pipeline with explicit freeze and republish rules
 3. build official seeding and archive surfaces
 4. build live matchup voting
 5. add predictions, points, and advanced ranking layers later

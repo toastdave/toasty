@@ -101,9 +101,9 @@ const futureTracks = [
 		<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 			<div class="max-w-3xl">
 				<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Tournament setup</p>
-				<h2 class="mt-2 font-display text-3xl text-ink-950">{data.tournamentPreview.year} anime seeding preview</h2>
+				<h2 class="mt-2 font-display text-3xl text-ink-950">{data.tournamentPreview.year} anime seeding snapshot</h2>
 				<p class="mt-3 text-base leading-7 text-ink-700">
-					The first tournament layer is now live as a public preview: current catalog quality, popularity, and live checklist engagement combine into a projected bracket field.
+					The first tournament layer is now live as a frozen public snapshot: current catalog quality, popularity, and live checklist engagement combine into a projected bracket field.
 				</p>
 			</div>
 			<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href={`/tournaments/anime/${data.tournamentPreview.year}`}>

@@ -4,11 +4,12 @@ import {
 	scoreAnimeTournamentSeed,
 	tournamentRegions,
 } from '$lib/tournaments'
-import { animeDetails, mediaItems, userChecklists } from '@toasty/db/schema'
-import { desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { animeDetails, mediaItems, mediaYearlyRankings, userChecklists } from '@toasty/db/schema'
+import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
 type SeedCandidateRow = {
 	engagementCount: number
+	mediaItemId: string
 	posterUrl: string | null
 	slug: string
 	sourcePopularityRank: number | null
@@ -34,6 +35,7 @@ export type AnimeTournamentSeedingPreview = {
 	entryCount: number
 	generatedAt: Date
 	headerLabel: string
+	isFrozenSnapshot: boolean
 	methodology: string[]
 	regions: Array<{
 		label: (typeof tournamentRegions)[number]
@@ -90,6 +92,7 @@ async function listAnimeSeedCandidates(year: number): Promise<SeedCandidateRow[]
 	const rows = await db
 		.select({
 			engagementCount: sql<number>`count(${userChecklists.userId})`,
+			mediaItemId: mediaItems.id,
 			posterUrl: mediaItems.imageUrlPoster,
 			slug: mediaItems.slug,
 			sourcePopularityRank: animeDetails.sourcePopularity,
@@ -114,6 +117,7 @@ async function listAnimeSeedCandidates(year: number): Promise<SeedCandidateRow[]
 	return rows
 		.map((row) => ({
 			engagementCount: row.engagementCount,
+			mediaItemId: row.mediaItemId,
 			posterUrl: row.posterUrl,
 			slug: row.slug,
 			sourcePopularityRank: row.sourcePopularityRank,
@@ -124,15 +128,50 @@ async function listAnimeSeedCandidates(year: number): Promise<SeedCandidateRow[]
 		.filter((row) => Boolean(row.slug))
 }
 
-export async function getAnimeTournamentSeedingPreview(
-	preferredYear?: number
-): Promise<AnimeTournamentSeedingPreview | null> {
-	const year = await getAnimeCandidateYear(preferredYear)
+async function listStoredAnimeSeeds(year: number): Promise<AnimeTournamentSeed[]> {
+	const rows = await db
+		.select({
+			compositeScore: mediaYearlyRankings.compositeScore,
+			createdAt: mediaYearlyRankings.createdAt,
+			engagementRank: mediaYearlyRankings.engagementRank,
+			finalSeedScore: mediaYearlyRankings.finalSeedScore,
+			popularityRank: mediaYearlyRankings.popularityRank,
+			posterUrl: mediaItems.imageUrlPoster,
+			slug: mediaItems.slug,
+			title: mediaItems.title,
+			year: mediaYearlyRankings.year,
+		})
+		.from(mediaYearlyRankings)
+		.innerJoin(mediaItems, eq(mediaItems.id, mediaYearlyRankings.mediaItemId))
+		.where(and(eq(mediaYearlyRankings.year, year), eq(mediaYearlyRankings.mediaType, 'anime')))
+		.orderBy(desc(mediaYearlyRankings.finalSeedScore), asc(mediaItems.title))
 
-	if (!year) {
-		return null
-	}
+	return rows.slice(0, 16).map((row, index) => ({
+		engagementCount: row.engagementRank ?? 0,
+		finalSeedScore: toNullableNumber(row.finalSeedScore) ?? 0,
+		popularityRank: row.popularityRank,
+		posterUrl: row.posterUrl,
+		region: assignTournamentRegion(index),
+		ratingScore: toNullableNumber(row.compositeScore),
+		seed: index + 1,
+		slug: row.slug,
+		title: row.title,
+		year: row.year,
+	}))
+}
 
+async function getStoredAnimeSnapshotCreatedAt(year: number) {
+	const [row] = await db
+		.select({ createdAt: mediaYearlyRankings.createdAt })
+		.from(mediaYearlyRankings)
+		.where(and(eq(mediaYearlyRankings.year, year), eq(mediaYearlyRankings.mediaType, 'anime')))
+		.orderBy(asc(mediaYearlyRankings.createdAt))
+		.limit(1)
+
+	return row?.createdAt ?? null
+}
+
+async function createAnimeTournamentSeedingSnapshot(year: number) {
 	const candidates = await listAnimeSeedCandidates(year)
 
 	if (candidates.length === 0) {
@@ -147,8 +186,9 @@ export async function getAnimeTournamentSeedingPreview(
 		...candidates.map((candidate) => candidate.engagementCount),
 		0
 	)
+	const now = new Date()
 
-	const seeds = candidates
+	const rankedCandidates = candidates
 		.map((candidate) => ({
 			engagementCount: candidate.engagementCount,
 			finalSeedScore: scoreAnimeTournamentSeed({
@@ -158,6 +198,7 @@ export async function getAnimeTournamentSeedingPreview(
 				sourcePopularityRank: candidate.sourcePopularityRank,
 				sourceScore: toNullableNumber(candidate.sourceScore),
 			}),
+			mediaItemId: candidate.mediaItemId,
 			popularityRank: candidate.sourcePopularityRank,
 			posterUrl: candidate.posterUrl,
 			ratingScore: toNullableNumber(candidate.sourceScore),
@@ -167,16 +208,75 @@ export async function getAnimeTournamentSeedingPreview(
 		}))
 		.sort((left, right) => right.finalSeedScore - left.finalSeedScore)
 		.slice(0, 16)
-		.map((candidate, index) => ({
-			...candidate,
-			region: assignTournamentRegion(index),
-			seed: index + 1,
-		}))
+
+	await db.transaction(async (tx) => {
+		await tx
+			.delete(mediaYearlyRankings)
+			.where(and(eq(mediaYearlyRankings.year, year), eq(mediaYearlyRankings.mediaType, 'anime')))
+
+		await tx.insert(mediaYearlyRankings).values(
+			rankedCandidates.map((candidate, index) => ({
+				compositeScore: candidate.ratingScore?.toFixed(2) ?? null,
+				createdAt: now,
+				engagementRank: candidate.engagementCount,
+				finalSeedScore: candidate.finalSeedScore.toFixed(3),
+				mediaItemId: candidate.mediaItemId,
+				mediaType: 'anime' as const,
+				popularityRank: candidate.popularityRank,
+				ratingRank: index + 1,
+				year,
+			}))
+		)
+	})
+
+	return rankedCandidates.map((candidate, index) => ({
+		engagementCount: candidate.engagementCount,
+		finalSeedScore: candidate.finalSeedScore,
+		popularityRank: candidate.popularityRank,
+		posterUrl: candidate.posterUrl,
+		region: assignTournamentRegion(index),
+		ratingScore: candidate.ratingScore,
+		seed: index + 1,
+		slug: candidate.slug,
+		title: candidate.title,
+		year: candidate.year,
+	}))
+}
+
+export async function getAnimeTournamentSeedingPreview(
+	preferredYear?: number
+): Promise<AnimeTournamentSeedingPreview | null> {
+	const year = await getAnimeCandidateYear(preferredYear)
+
+	if (!year) {
+		return null
+	}
+
+	let isFrozenSnapshot = true
+	let generatedAt = await getStoredAnimeSnapshotCreatedAt(year)
+	let seeds = await listStoredAnimeSeeds(year)
+
+	if (seeds.length === 0) {
+		const createdSeeds = await createAnimeTournamentSeedingSnapshot(year)
+
+		if (!createdSeeds) {
+			return null
+		}
+
+		seeds = createdSeeds
+		generatedAt = new Date()
+		isFrozenSnapshot = true
+	}
+
+	if (seeds.length === 0 || !generatedAt) {
+		return null
+	}
 
 	return {
 		entryCount: seeds.length,
-		generatedAt: new Date(),
-		headerLabel: `Official seeding preview for the ${year} anime bracket`,
+		generatedAt,
+		headerLabel: `Frozen seeding snapshot for the ${year} anime bracket`,
+		isFrozenSnapshot,
 		methodology: [
 			'Universal quality signal from source score carries the heaviest weight.',
 			'Popularity rank helps separate established contenders from weaker candidates.',

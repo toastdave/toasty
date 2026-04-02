@@ -19,13 +19,13 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Tournament setup</p>
 			<h1 class="mt-3 font-display text-4xl tracking-tight text-ink-950">{data.tournament.headerLabel}</h1>
 			<p class="mt-4 text-base leading-7 text-ink-700">
-				This preview turns today&apos;s anime catalog into a first-pass bracket field. It is the setup layer before live voting, formal yearly freezes, and historical archives fully land.
+				This snapshot freezes a first-pass anime field from current catalog quality, popularity, and checklist engagement. It is the setup layer before live voting, full bracket generation, and historical archives fully land.
 			</p>
 		</div>
 
 		<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 px-5 py-4 text-sm text-ink-700">
 			<p>
-				Generated <span class="font-semibold text-ink-950">{dateFormatter.format(data.tournament.generatedAt)}</span>
+				Frozen <span class="font-semibold text-ink-950">{dateFormatter.format(data.tournament.generatedAt)}</span>
 			</p>
 			<p class="mt-2">
 				Field size <span class="font-semibold text-ink-950">{data.tournament.entryCount}</span>
@@ -54,7 +54,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 	<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/60 p-6">
 		<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 			<div>
-				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Official seeding preview</p>
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Official seeding snapshot</p>
 				<h2 class="mt-2 text-2xl font-semibold text-ink-950">Top projected entrants for {data.tournament.year}</h2>
 			</div>
 			<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/anime/top">Browse top anime</a>
