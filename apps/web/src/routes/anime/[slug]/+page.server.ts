@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ locals, params, fetch }) => {
 
 	const checklistEntry = locals.user ? await getAnimeChecklistEntry(locals.user.id, animeId) : null
 	const userRating = locals.user ? await getAnimeUserRating(locals.user.id, animeId) : null
-	const recommendationShelf = await getAnimeDetailRecommendationShelf(animeId)
+	const recommendationShelf = await getAnimeDetailRecommendationShelf(animeId, locals.user?.id)
 
 	return {
 		anime,

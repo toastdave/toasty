@@ -4,6 +4,7 @@ import {
 	getChecklistStatusMeta,
 	resolveChecklistDates,
 } from '$lib/checklists'
+import { recordAnimeCompletedActivity } from '$lib/server/activity'
 import { db } from '$lib/server/db'
 import { syncJikanAnimeDetailCatalog } from '$lib/server/services/jikan/catalog'
 import { animeDetails, mediaItems, userChecklists, userRatings } from '@toasty/db/schema'
@@ -94,6 +95,7 @@ export async function saveAnimeChecklistEntry(
 		.select({
 			completedAt: userChecklists.completedAt,
 			startedAt: userChecklists.startedAt,
+			status: userChecklists.status,
 		})
 		.from(userChecklists)
 		.where(and(eq(userChecklists.userId, userId), eq(userChecklists.mediaItemId, mediaItemId)))
@@ -120,6 +122,10 @@ export async function saveAnimeChecklistEntry(
 			},
 			target: [userChecklists.userId, userChecklists.mediaItemId],
 		})
+
+	if (status === 'done' && existingEntry?.status !== 'done') {
+		await recordAnimeCompletedActivity({ mediaItemId, userId })
+	}
 }
 
 export async function listTrackedAnime(userId: string) {

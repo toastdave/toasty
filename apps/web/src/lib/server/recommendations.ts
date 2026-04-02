@@ -1,5 +1,6 @@
 import {
 	buildAnimeRecommendationReason,
+	findAnimeRecommendationTasteMatches,
 	scoreAnimeRecommendationCandidate,
 } from '$lib/recommendations'
 import { db } from '$lib/server/db'
@@ -9,9 +10,12 @@ import {
 	genres,
 	mediaItemGenres,
 	mediaItems,
+	ratingAxes,
 	userChecklists,
+	userRatingAxisScores,
+	userRatings,
 } from '@toasty/db/schema'
-import { desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 
 type StoredAnimeRow = {
 	airedFrom: Date | null
@@ -49,7 +53,21 @@ export type AnimeRecommendationShelf = {
 type RecommendationReference = {
 	genreNames: string[]
 	mediaItemId: string
+	overallScore: number | null
+	recommendationStrength: number | null
 	season: string | null
+	tasteTags: string[]
+	title: string
+	type: 'detail' | 'rated' | 'tracked'
+	year: number | null
+}
+
+type RatedReferenceRow = {
+	mediaItemId: string
+	overallScore: string | number | null
+	ratingId: string
+	season: string | null
+	tagsJsonb: unknown
 	title: string
 	year: number | null
 }
@@ -89,6 +107,18 @@ function toNullableNumber(value: unknown) {
 	}
 
 	return null
+}
+
+function toStringArray(value: unknown) {
+	if (!Array.isArray(value)) {
+		return []
+	}
+
+	return value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+}
+
+function isStrongPositiveReference(reference: RecommendationReference) {
+	return (reference.overallScore ?? 0) >= 7 || (reference.recommendationStrength ?? 0) >= 7
 }
 
 async function getGenreMap(mediaItemIds: string[]) {
@@ -219,10 +249,87 @@ async function getAnimeReferenceByMalId(malId: number): Promise<RecommendationRe
 	return {
 		genreNames: genreMap.get(row.mediaItemId) ?? [],
 		mediaItemId: row.mediaItemId,
+		overallScore: null,
+		recommendationStrength: null,
 		season: row.season,
+		tasteTags: [],
 		title: row.title,
+		type: 'detail',
 		year: row.year,
 	}
+}
+
+async function getRecommendationStrengthForRating(ratingId: string) {
+	const [row] = await db
+		.select({ score: userRatingAxisScores.score })
+		.from(userRatingAxisScores)
+		.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
+		.where(
+			and(
+				eq(userRatingAxisScores.userRatingId, ratingId),
+				eq(ratingAxes.key, 'recommendation_strength')
+			)
+		)
+		.limit(1)
+
+	return toNullableNumber(row?.score)
+}
+
+async function buildRatedReference(
+	row: RatedReferenceRow
+): Promise<RecommendationReference | null> {
+	const [genreMap, recommendationStrength] = await Promise.all([
+		getGenreMap([row.mediaItemId]),
+		getRecommendationStrengthForRating(row.ratingId),
+	])
+
+	return {
+		genreNames: genreMap.get(row.mediaItemId) ?? [],
+		mediaItemId: row.mediaItemId,
+		overallScore: toNullableNumber(row.overallScore),
+		recommendationStrength,
+		season: row.season,
+		tasteTags: toStringArray(row.tagsJsonb),
+		title: row.title,
+		type: 'rated',
+		year: row.year,
+	}
+}
+
+async function getRatedAnimeReference(
+	userId: string,
+	mediaItemId?: string
+): Promise<RecommendationReference | null> {
+	const rows = await db
+		.select({
+			mediaItemId: userRatings.mediaItemId,
+			overallScore: userRatings.overallScore,
+			ratingId: userRatings.id,
+			season: animeDetails.season,
+			tagsJsonb: userRatings.tagsJsonb,
+			title: mediaItems.title,
+			year: animeDetails.year,
+		})
+		.from(userRatings)
+		.innerJoin(mediaItems, eq(mediaItems.id, userRatings.mediaItemId))
+		.innerJoin(animeDetails, eq(animeDetails.mediaItemId, mediaItems.id))
+		.where(
+			mediaItemId
+				? and(eq(userRatings.userId, userId), eq(userRatings.mediaItemId, mediaItemId))
+				: eq(userRatings.userId, userId)
+		)
+		.orderBy(desc(userRatings.overallScore), desc(userRatings.updatedAt))
+		.limit(mediaItemId ? 1 : 6)
+
+	for (const row of rows) {
+		const reference = await buildRatedReference(row)
+
+		if (reference && isStrongPositiveReference(reference)) {
+			return reference
+		}
+	}
+
+	return null
 }
 
 async function getLatestTrackedAnimeReference(
@@ -251,8 +358,12 @@ async function getLatestTrackedAnimeReference(
 	return {
 		genreNames: genreMap.get(row.mediaItemId) ?? [],
 		mediaItemId: row.mediaItemId,
+		overallScore: null,
+		recommendationStrength: null,
 		season: row.season,
+		tasteTags: [],
 		title: row.title,
+		type: 'tracked',
 		year: row.year,
 	}
 }
@@ -289,10 +400,13 @@ async function buildAnimeRecommendations(
 		.map((row) => {
 			const card = toAnimeCard(row, genreMap)
 			const overlapGenres = card.genres.filter((genre) => referenceGenreSet.has(genre))
+			const matchedTasteTags = findAnimeRecommendationTasteMatches(reference.tasteTags, card.genres)
 			const candidateScore = scoreAnimeRecommendationCandidate({
 				candidateScore: card.score,
 				candidateSeason: card.season,
 				candidateYear: card.year,
+				matchedTasteCount: matchedTasteTags.length,
+				referenceRecommendationStrength: reference.recommendationStrength,
 				referenceSeason: reference.season,
 				referenceYear: reference.year,
 				sharedGenreCount: overlapCounts.get(row.mediaItemId) ?? 0,
@@ -300,7 +414,10 @@ async function buildAnimeRecommendations(
 
 			return {
 				...card,
-				matchReason: buildAnimeRecommendationReason(overlapGenres),
+				matchReason: buildAnimeRecommendationReason({
+					matchedTasteTags,
+					sharedGenres: overlapGenres,
+				}),
 				recommendationScore: candidateScore,
 			}
 		})
@@ -310,7 +427,8 @@ async function buildAnimeRecommendations(
 }
 
 export async function getAnimeDetailRecommendationShelf(
-	malId: number
+	malId: number,
+	userId?: string
 ): Promise<AnimeRecommendationShelf | null> {
 	const reference = await getAnimeReferenceByMalId(malId)
 
@@ -318,15 +436,30 @@ export async function getAnimeDetailRecommendationShelf(
 		return null
 	}
 
-	const items = await buildAnimeRecommendations(reference, [reference.mediaItemId])
+	const personalizedReference = userId
+		? ((await getRatedAnimeReference(userId, reference.mediaItemId)) ?? reference)
+		: reference
+
+	const items = await buildAnimeRecommendations(personalizedReference, [reference.mediaItemId])
 
 	if (items.length === 0) {
 		return null
 	}
 
+	const personalizedTags = personalizedReference.tasteTags.slice(0, 2)
+	const personalizedDescription =
+		personalizedReference.type === 'rated'
+			? personalizedTags.length > 0
+				? `You rated ${reference.title} highly with a ${personalizedTags.join(' + ')} taste profile. Shared genre and flavor signals point to these next.`
+				: `You rated ${reference.title} highly, so these picks lean on the closest shared genres and overall fit.`
+			: `Shared genre overlap with ${reference.title} makes these the strongest next stops.`
+
 	return {
-		description: `Shared genre overlap with ${reference.title} makes these the strongest next stops.`,
-		heading: 'If this one lands, try these next',
+		description: personalizedDescription,
+		heading:
+			personalizedReference.type === 'rated'
+				? `If ${reference.title} hit, stay in this lane`
+				: 'If this one lands, try these next',
 		items,
 		sourceTitle: reference.title,
 	}
@@ -335,10 +468,12 @@ export async function getAnimeDetailRecommendationShelf(
 export async function getHomeTrackedAnimeRecommendationShelf(
 	userId: string
 ): Promise<AnimeRecommendationShelf | null> {
-	const [reference, trackedAnimeIds] = await Promise.all([
+	const [ratedReference, trackedReference, trackedAnimeIds] = await Promise.all([
+		getRatedAnimeReference(userId),
 		getLatestTrackedAnimeReference(userId),
 		listTrackedAnimeIds(userId),
 	])
+	const reference = ratedReference ?? trackedReference
 
 	if (!reference || reference.genreNames.length === 0) {
 		return null
@@ -351,8 +486,16 @@ export async function getHomeTrackedAnimeRecommendationShelf(
 	}
 
 	return {
-		description: `A few strong next picks based on the lane you opened with ${reference.title}.`,
-		heading: `Because you tracked ${reference.title}`,
+		description:
+			reference.type === 'rated'
+				? reference.tasteTags.length > 0
+					? `You scored ${reference.title} highly, and your ${reference.tasteTags.slice(0, 2).join(' + ')} lanes help shape these next picks.`
+					: `You scored ${reference.title} highly, so these recommendations stay close to the same genre lane.`
+				: `A few strong next picks based on the lane you opened with ${reference.title}.`,
+		heading:
+			reference.type === 'rated'
+				? `Because you rated ${reference.title} highly`
+				: `Because you tracked ${reference.title}`,
 		items,
 		sourceTitle: reference.title,
 	}

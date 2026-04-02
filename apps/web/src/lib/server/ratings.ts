@@ -5,6 +5,7 @@ import {
 	extractDominantFlavorTags,
 	getAnimeAxisBlueprint,
 } from '$lib/ratings'
+import { recordAnimeRatingActivity } from '$lib/server/activity'
 import { ensureAnimeMediaItemId } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import {
@@ -42,6 +43,12 @@ export type AnimeUserRating = {
 
 export type UserRatingSnapshot = {
 	averageOverall: number | null
+	strongestAxes: Array<{
+		average: number
+		key: string
+		label: string
+	}>
+	topTags: string[]
 	ratedCount: number
 }
 
@@ -293,20 +300,87 @@ export async function saveAnimeUserRating(
 		}
 	})
 
+	await recordAnimeRatingActivity({
+		mediaItemId,
+		overallScore,
+		tags,
+		userId,
+	})
+
 	return overallScore
 }
 
 export async function getUserRatingSnapshot(userId: string): Promise<UserRatingSnapshot> {
-	const [row] = await db
-		.select({
-			averageOverall: sql<string | null>`avg(${userRatings.overallScore})`,
-			ratedCount: sql<number>`count(*)`,
+	const [[summaryRow], storedRatings, axisRows] = await Promise.all([
+		db
+			.select({
+				averageOverall: sql<string | null>`avg(${userRatings.overallScore})`,
+				ratedCount: sql<number>`count(*)`,
+			})
+			.from(userRatings)
+			.where(eq(userRatings.userId, userId)),
+		db
+			.select({ tagsJsonb: userRatings.tagsJsonb })
+			.from(userRatings)
+			.where(eq(userRatings.userId, userId)),
+		db
+			.select({
+				average: sql<string>`avg(${userRatingAxisScores.score})`,
+				key: ratingAxes.key,
+			})
+			.from(userRatingAxisScores)
+			.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
+			.innerJoin(userRatings, eq(userRatings.id, userRatingAxisScores.userRatingId))
+			.where(eq(userRatings.userId, userId))
+			.groupBy(ratingAxes.key),
+	])
+
+	const tagCounts = new Map<string, number>()
+
+	for (const row of storedRatings) {
+		const tags = Array.isArray(row.tagsJsonb)
+			? row.tagsJsonb.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0)
+			: []
+
+		for (const tag of tags) {
+			tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+		}
+	}
+
+	const strongestAxes = axisRows
+		.map((row) => {
+			const average = toNullableNumber(row.average)
+			const axis = getAnimeAxisBlueprint(row.key)
+
+			if (average === null || !axis) {
+				return null
+			}
+
+			return {
+				average,
+				key: row.key,
+				label: axis.label,
+			}
 		})
-		.from(userRatings)
-		.where(eq(userRatings.userId, userId))
+		.filter(
+			(
+				axis
+			): axis is {
+				average: number
+				key: string
+				label: string
+			} => axis !== null
+		)
+		.sort((left, right) => right.average - left.average)
+		.slice(0, 3)
 
 	return {
-		averageOverall: toNullableNumber(row?.averageOverall),
-		ratedCount: row?.ratedCount ?? 0,
+		averageOverall: toNullableNumber(summaryRow?.averageOverall),
+		strongestAxes,
+		topTags: [...tagCounts.entries()]
+			.sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+			.slice(0, 3)
+			.map(([tag]) => tag),
+		ratedCount: summaryRow?.ratedCount ?? 0,
 	}
 }

@@ -1,3 +1,4 @@
+import { recordTournamentVoteActivity } from '$lib/server/activity'
 import { db } from '$lib/server/db'
 import {
 	assignTournamentRegion,
@@ -640,5 +641,16 @@ export async function submitAnimeTournamentVote(
 			userId,
 			voteEntryId,
 		})
+	})
+
+	const selectedEntry = voteEntryId === matchup.entryAEntryId ? matchup.entryA : matchup.entryB
+	const opponentEntry = voteEntryId === matchup.entryAEntryId ? matchup.entryB : matchup.entryA
+
+	await recordTournamentVoteActivity({
+		matchupId,
+		opponentTitle: opponentEntry.title,
+		selectedTitle: selectedEntry.title,
+		userId,
+		year,
 	})
 }

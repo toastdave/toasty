@@ -1,4 +1,5 @@
 import { normalizeRedirectTo } from '$lib/auth/redirects'
+import { listUserActivity } from '$lib/server/activity'
 import { listTrackedAnime } from '$lib/server/checklists'
 import { ensureUserHandle } from '$lib/server/profiles'
 import { getUserRatingSnapshot } from '$lib/server/ratings'
@@ -15,12 +16,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 
 	const publicHandle = await ensureUserHandle(locals.user.id, locals.user.name)
-	const [trackedAnime, ratingSnapshot] = await Promise.all([
+	const [activity, trackedAnime, ratingSnapshot] = await Promise.all([
+		listUserActivity(locals.user.id),
 		listTrackedAnime(locals.user.id),
 		getUserRatingSnapshot(locals.user.id),
 	])
 
 	return {
+		activity,
 		...trackedAnime,
 		publicHandle,
 		publicProfilePath: buildProfilePath(publicHandle),

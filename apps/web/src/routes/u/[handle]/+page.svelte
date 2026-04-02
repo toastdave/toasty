@@ -1,4 +1,5 @@
 <script lang="ts">
+import { resolve } from '$app/paths'
 import type { PageData } from './$types'
 
 const { data }: { data: PageData } = $props()
@@ -53,10 +54,60 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 					<p class="mt-2 text-lg font-semibold text-ink-950">{data.profile.ratingSnapshot.averageOverall ?? 'TBD'}</p>
 				</div>
 			</div>
+
+			<div class="mt-6 rounded-[1.25rem] border border-black/8 bg-white/80 p-4">
+				<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Taste profile</p>
+				{#if data.profile.ratingSnapshot.topTags.length > 0}
+					<div class="mt-3 flex flex-wrap gap-2">
+						{#each data.profile.ratingSnapshot.topTags as tag (tag)}
+							<span class="rounded-full bg-cream-50 px-3 py-2 text-sm font-semibold text-ink-950">{tag}</span>
+						{/each}
+					</div>
+				{:else}
+					<p class="mt-3 text-sm leading-6 text-ink-700">No clear flavor lane yet. Once more ratings land, this profile will show the strongest Toasty signals.</p>
+				{/if}
+
+				{#if data.profile.ratingSnapshot.strongestAxes.length > 0}
+					<div class="mt-4 space-y-3">
+						{#each data.profile.ratingSnapshot.strongestAxes as axis (axis.key)}
+							<div class="flex items-center justify-between gap-3 rounded-[1rem] border border-black/8 bg-cream-50/70 px-3 py-3 text-sm text-ink-700">
+								<span class="font-semibold text-ink-950">{axis.label}</span>
+								<span>Avg {axis.average}</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<div>
-			<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-6">
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Recent activity</p>
+				<h2 class="mt-2 text-2xl font-semibold text-ink-950">The latest public moves on this profile.</h2>
+
+				{#if data.profile.activity.length > 0}
+					<div class="mt-5 space-y-3">
+						{#each data.profile.activity as item (item.id)}
+							<a class="block rounded-[1.15rem] border border-black/8 bg-white/90 px-4 py-4 hover:border-coral-400/50 hover:bg-white" href={resolve(item.href ?? data.profile.profilePath)}>
+								<div class="flex items-start justify-between gap-3">
+									<div class="min-w-0">
+										<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{item.label}</p>
+										<h3 class="mt-2 line-clamp-2 text-lg font-semibold text-ink-950">{item.title}</h3>
+										<p class="mt-2 text-sm leading-6 text-ink-700">{item.description}</p>
+									</div>
+									<p class="shrink-0 text-sm text-ink-700">{dateFormatter.format(item.createdAt)}</p>
+								</div>
+							</a>
+						{/each}
+					</div>
+				{:else}
+					<div class="mt-5 rounded-[1.25rem] border border-dashed border-black/10 bg-white/70 p-5 text-sm leading-7 text-ink-700">
+						No public activity has landed yet.
+					</div>
+				{/if}
+			</div>
+
+			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{#each data.profile.sections as section (section.status)}
 					<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
 						<p class="text-sm uppercase tracking-[0.2em] text-ink-700">{section.title}</p>
@@ -80,7 +131,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 						{#if section.items.length > 0}
 							<div class="mt-5 grid gap-4 lg:grid-cols-2">
 								{#each section.items as anime (anime.slug)}
-									<a class="flex gap-4 rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/60 hover:bg-white" href={`/anime/${anime.slug}`}>
+									<a class="flex gap-4 rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/60 hover:bg-white" href={resolve('/anime/[slug]', { slug: anime.slug })}>
 										{#if anime.posterUrl}
 											<img alt={anime.title} class="h-28 w-20 rounded-[1.1rem] border border-black/8 object-cover" src={anime.posterUrl} />
 										{:else}

@@ -1,3 +1,4 @@
+import { listUserActivity } from '$lib/server/activity'
 import { listTrackedAnime } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import { getUserRatingSnapshot } from '$lib/server/ratings'
@@ -70,10 +71,14 @@ export async function getPublicProfileByHandle(handle: string) {
 		return null
 	}
 
-	const trackedAnime = await listTrackedAnime(profileUser.id)
-	const ratingSnapshot = await getUserRatingSnapshot(profileUser.id)
+	const [activity, trackedAnime, ratingSnapshot] = await Promise.all([
+		listUserActivity(profileUser.id),
+		listTrackedAnime(profileUser.id),
+		getUserRatingSnapshot(profileUser.id),
+	])
 
 	return {
+		activity,
 		bio: profileUser.bio,
 		createdAt: profileUser.createdAt,
 		handle: profileUser.handle,
