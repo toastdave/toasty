@@ -1,10 +1,20 @@
 import { db } from '$lib/server/db'
 import {
 	assignTournamentRegion,
+	buildOpeningRoundPairings,
+	groupSeedsIntoRegions,
 	scoreAnimeTournamentSeed,
 	tournamentRegions,
 } from '$lib/tournaments'
-import { animeDetails, mediaItems, mediaYearlyRankings, userChecklists } from '@toasty/db/schema'
+import {
+	animeDetails,
+	matchups,
+	mediaItems,
+	mediaYearlyRankings,
+	tournamentEntries,
+	tournaments,
+	userChecklists,
+} from '@toasty/db/schema'
 import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
 type SeedCandidateRow = {
@@ -42,6 +52,30 @@ export type AnimeTournamentSeedingPreview = {
 		seedCount: number
 	}>
 	seeds: AnimeTournamentSeed[]
+	year: number
+}
+
+type StoredAnimeSeedRecord = AnimeTournamentSeed & {
+	mediaItemId: string
+}
+
+export type AnimeTournamentBracket = {
+	generatedAt: Date
+	headerLabel: string
+	openingRoundMatchups: Array<{
+		entryA: AnimeTournamentSeed
+		entryB: AnimeTournamentSeed
+		id: string
+		label: string
+		region: (typeof tournamentRegions)[number]
+		roundNumber: number
+	}>
+	regions: Array<{
+		items: AnimeTournamentSeed[]
+		label: (typeof tournamentRegions)[number]
+	}>
+	slug: string
+	tournamentId: string
 	year: number
 }
 
@@ -128,13 +162,14 @@ async function listAnimeSeedCandidates(year: number): Promise<SeedCandidateRow[]
 		.filter((row) => Boolean(row.slug))
 }
 
-async function listStoredAnimeSeeds(year: number): Promise<AnimeTournamentSeed[]> {
+async function listStoredAnimeSeeds(year: number): Promise<StoredAnimeSeedRecord[]> {
 	const rows = await db
 		.select({
 			compositeScore: mediaYearlyRankings.compositeScore,
 			createdAt: mediaYearlyRankings.createdAt,
 			engagementRank: mediaYearlyRankings.engagementRank,
 			finalSeedScore: mediaYearlyRankings.finalSeedScore,
+			mediaItemId: mediaYearlyRankings.mediaItemId,
 			popularityRank: mediaYearlyRankings.popularityRank,
 			posterUrl: mediaItems.imageUrlPoster,
 			slug: mediaItems.slug,
@@ -149,6 +184,7 @@ async function listStoredAnimeSeeds(year: number): Promise<AnimeTournamentSeed[]
 	return rows.slice(0, 16).map((row, index) => ({
 		engagementCount: row.engagementRank ?? 0,
 		finalSeedScore: toNullableNumber(row.finalSeedScore) ?? 0,
+		mediaItemId: row.mediaItemId,
 		popularityRank: row.popularityRank,
 		posterUrl: row.posterUrl,
 		region: assignTournamentRegion(index),
@@ -232,6 +268,7 @@ async function createAnimeTournamentSeedingSnapshot(year: number) {
 	return rankedCandidates.map((candidate, index) => ({
 		engagementCount: candidate.engagementCount,
 		finalSeedScore: candidate.finalSeedScore,
+		mediaItemId: candidate.mediaItemId,
 		popularityRank: candidate.popularityRank,
 		posterUrl: candidate.posterUrl,
 		region: assignTournamentRegion(index),
@@ -287,6 +324,154 @@ export async function getAnimeTournamentSeedingPreview(
 			seedCount: seeds.filter((seed) => seed.region === label).length,
 		})),
 		seeds,
+		year,
+	}
+}
+
+async function getStoredAnimeTournament(year: number) {
+	const [tournament] = await db
+		.select({ id: tournaments.id, slug: tournaments.slug, updatedAt: tournaments.updatedAt })
+		.from(tournaments)
+		.where(and(eq(tournaments.year, year), eq(tournaments.mediaType, 'anime')))
+		.orderBy(desc(tournaments.createdAt))
+		.limit(1)
+
+	return tournament ?? null
+}
+
+async function createAnimeTournamentBracket(year: number, seeds: StoredAnimeSeedRecord[]) {
+	const tournament = await db.transaction(async (tx) => {
+		const [createdTournament] = await tx
+			.insert(tournaments)
+			.values({
+				mediaType: 'anime',
+				name: `${year} Anime Bracket`,
+				slug: `anime-${year}-bracket`,
+				status: 'draft',
+				year,
+			})
+			.returning({ id: tournaments.id, slug: tournaments.slug, updatedAt: tournaments.updatedAt })
+
+		const orderedSeeds = [...seeds].sort((left, right) => left.seed - right.seed)
+		const createdEntries = await tx
+			.insert(tournamentEntries)
+			.values(
+				orderedSeeds.map((seed) => ({
+					entryLabel: `${seed.region} seed ${seed.seed}`,
+					mediaItemId: seed.mediaItemId,
+					region: seed.region,
+					seed: seed.seed,
+					tournamentId: createdTournament.id,
+				}))
+			)
+			.returning({
+				id: tournamentEntries.id,
+				region: tournamentEntries.region,
+				seed: tournamentEntries.seed,
+			})
+
+		const regionEntries = createdEntries.filter(
+			(entry): entry is { id: string; region: (typeof tournamentRegions)[number]; seed: number } =>
+				Boolean(entry.region)
+		)
+
+		for (const regionGroup of groupSeedsIntoRegions(regionEntries)) {
+			const pairings = buildOpeningRoundPairings(regionGroup.items)
+
+			await tx.insert(matchups).values(
+				pairings.map((pairing, index) => ({
+					entryAId: pairing.entryA.id,
+					entryBId: pairing.entryB.id,
+					matchupNumber: index + 1,
+					roundNumber: 1,
+					status: 'scheduled' as const,
+					tournamentId: createdTournament.id,
+				}))
+			)
+		}
+
+		return createdTournament
+	})
+
+	return tournament
+}
+
+export async function getAnimeTournamentBracket(
+	year: number
+): Promise<AnimeTournamentBracket | null> {
+	const seeds = await listStoredAnimeSeeds(year)
+
+	if (seeds.length === 0) {
+		return null
+	}
+
+	let tournament = await getStoredAnimeTournament(year)
+
+	if (!tournament) {
+		tournament = await createAnimeTournamentBracket(year, seeds)
+	}
+
+	const matchupRows = await db
+		.select({
+			entryAId: matchups.entryAId,
+			entryBId: matchups.entryBId,
+			id: matchups.id,
+			matchupNumber: matchups.matchupNumber,
+			roundNumber: matchups.roundNumber,
+		})
+		.from(matchups)
+		.where(and(eq(matchups.tournamentId, tournament.id), eq(matchups.roundNumber, 1)))
+		.orderBy(asc(matchups.matchupNumber))
+
+	const entryRows = await db
+		.select({
+			id: tournamentEntries.id,
+			region: tournamentEntries.region,
+			seed: tournamentEntries.seed,
+		})
+		.from(tournamentEntries)
+		.where(eq(tournamentEntries.tournamentId, tournament.id))
+
+	const entryMap = new Map(entryRows.map((entry) => [entry.id, entry]))
+	const seedMap = new Map(seeds.map((seed) => [`${seed.region}:${seed.seed}`, seed]))
+
+	const openingRoundMatchups = matchupRows
+		.map((matchup) => {
+			const entryA = entryMap.get(matchup.entryAId)
+			const entryB = entryMap.get(matchup.entryBId)
+
+			if (!entryA?.region || !entryB?.region) {
+				return null
+			}
+
+			const seedA = seedMap.get(`${entryA.region}:${entryA.seed}`)
+			const seedB = seedMap.get(`${entryB.region}:${entryB.seed}`)
+
+			if (!seedA || !seedB) {
+				return null
+			}
+
+			return {
+				entryA: seedA,
+				entryB: seedB,
+				id: matchup.id,
+				label: `${entryA.region} region • Match ${matchup.matchupNumber}`,
+				region: entryA.region,
+				roundNumber: matchup.roundNumber,
+			}
+		})
+		.filter(Boolean) as AnimeTournamentBracket['openingRoundMatchups']
+
+	return {
+		generatedAt: tournament.updatedAt,
+		headerLabel: `${year} Anime Bracket`,
+		openingRoundMatchups,
+		regions: groupSeedsIntoRegions(seeds).map((group) => ({
+			items: group.items,
+			label: group.region,
+		})),
+		slug: tournament.slug,
+		tournamentId: tournament.id,
 		year,
 	}
 }

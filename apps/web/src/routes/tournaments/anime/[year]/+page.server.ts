@@ -1,4 +1,7 @@
-import { getAnimeTournamentSeedingPreview } from '$lib/server/tournaments'
+import {
+	getAnimeTournamentBracket,
+	getAnimeTournamentSeedingPreview,
+} from '$lib/server/tournaments'
 import { error } from '@sveltejs/kit'
 import type { PageServerLoad } from './$types'
 
@@ -10,12 +13,14 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const tournament = await getAnimeTournamentSeedingPreview(year)
+	const bracket = await getAnimeTournamentBracket(year)
 
 	if (!tournament || tournament.year !== year) {
 		throw error(404, 'Tournament not found')
 	}
 
 	return {
+		bracket,
 		tournament,
 	}
 }

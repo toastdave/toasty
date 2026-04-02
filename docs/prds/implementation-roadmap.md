@@ -67,7 +67,7 @@
 - yearly eligibility rules [next]
 - seeding snapshot pipeline [done in first stored form, anime-first]
 - official seeding page [done in first form, anime-first]
-- bracket generation [later in phase]
+- bracket generation [done in first opening-round form, anime-first]
 - matchup voting [later in phase]
 - rankings, points, and accuracy [later]
 - historical archive views [later in phase]

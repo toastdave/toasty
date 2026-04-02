@@ -30,6 +30,11 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			<p class="mt-2">
 				Field size <span class="font-semibold text-ink-950">{data.tournament.entryCount}</span>
 			</p>
+			{#if data.bracket}
+				<p class="mt-2">
+					Bracket <span class="font-semibold text-ink-950">generated</span>
+				</p>
+			{/if}
 		</div>
 	</div>
 
@@ -57,7 +62,14 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Official seeding snapshot</p>
 				<h2 class="mt-2 text-2xl font-semibold text-ink-950">Top projected entrants for {data.tournament.year}</h2>
 			</div>
-			<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/anime/top">Browse top anime</a>
+			<div class="flex flex-wrap gap-3">
+				{#if data.bracket}
+					<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={`/tournaments/anime/${data.tournament.year}/bracket`}>
+						View bracket
+					</a>
+				{/if}
+				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/anime/top">Browse top anime</a>
+			</div>
 		</div>
 
 		<div class="mt-5 space-y-3">
