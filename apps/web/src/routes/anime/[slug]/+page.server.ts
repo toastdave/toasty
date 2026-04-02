@@ -6,6 +6,7 @@ import {
 	removeAnimeChecklistEntry,
 	saveAnimeChecklistEntry,
 } from '$lib/server/checklists'
+import { getAnimeDetailRecommendationShelf } from '$lib/server/recommendations'
 import { getAnimeDetailCatalog } from '$lib/server/services/jikan/catalog'
 import { buildAnimeSlug } from '$lib/utils/anime'
 import { extractAnimeId } from '$lib/utils/anime'
@@ -27,10 +28,12 @@ export const load: PageServerLoad = async ({ locals, params, fetch }) => {
 	}
 
 	const checklistEntry = locals.user ? await getAnimeChecklistEntry(locals.user.id, animeId) : null
+	const recommendationShelf = await getAnimeDetailRecommendationShelf(animeId)
 
 	return {
 		anime,
 		checklistEntry,
+		recommendationShelf,
 	}
 }
 

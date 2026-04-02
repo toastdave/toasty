@@ -31,6 +31,8 @@ Discovery pages should stay calm, premium, and hospitality-like.
 - top anime page is live and chart-oriented
 - schedule page supports day-based scanning with tabs and counts
 - anime detail pages have canonical slug redirects and stronger cross-links back into discovery
+- signed-in users now see a `because you tracked` recommendation shelf on the home page when enough catalog overlap exists
+- anime detail pages now surface related-title recommendations based on shared genre overlap and nearby metadata affinity
 - shared error handling exists for broken routes and temporary load failures
 
 ## Near-term evolution
@@ -79,4 +81,4 @@ Recommendation work should begin inside discovery rather than as a separate hidd
 
 - add richer browse filters beyond day tabs
 - improve fallback messaging for source outages and rate limits
-- add recommendation-ready detail modules instead of static dead-end pages
+- deepen recommendation modules with rating-aware explanation once the rating system is live

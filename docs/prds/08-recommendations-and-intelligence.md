@@ -72,15 +72,25 @@ Avoid empty copy like `recommended for you` unless the system can say more.
 
 ### Stage 1 - Recommendation-ready discovery
 
-- related-title modules on detail pages
-- editorial or trend-assisted shelves
-- because-you-tracked rows on home and profile pages
+- related-title modules on detail pages [partially shipped]
+- editorial or trend-assisted shelves [not shipped]
+- because-you-tracked rows on home and profile pages [home partially shipped]
 
 ### Stage 2 - Rating-aware recommendations
 
 - use universal core dimensions and flavor vectors
 - explain recommendations through explicit dimension overlap
 - keep most recommendations within the same media lane first
+
+## Current implementation posture
+
+The first recommendation slice is intentionally heuristic and anime-only.
+
+- home recommendations currently use the latest tracked anime as the anchor
+- detail-page recommendations currently rely on shared genre overlap and nearby metadata affinity
+- the system does not yet use user ratings, flavor vectors, or deeper completion behavior
+
+This is acceptable as long as the product explains the recommendation plainly and continues to improve as richer rating data ships.
 
 ### Stage 3 - Deeper personalization
 

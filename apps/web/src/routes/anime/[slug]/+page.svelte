@@ -160,5 +160,52 @@ const activeChecklistMeta = $derived(
 				</ul>
 			</div>
 		</div>
+
+		{#if data.recommendationShelf}
+			<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-6">
+				<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+					<div class="max-w-2xl">
+						<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Recommended next</p>
+						<h2 class="mt-2 text-2xl font-semibold text-ink-950">{data.recommendationShelf.heading}</h2>
+						<p class="mt-3 text-sm leading-6 text-ink-700">{data.recommendationShelf.description}</p>
+					</div>
+					<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/anime/top">Browse top anime</a>
+				</div>
+
+				<div class="mt-5 grid gap-4 lg:grid-cols-2">
+					{#each data.recommendationShelf.items as anime (anime.slug)}
+						<a class="flex gap-4 rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/60 hover:bg-white" href={`/anime/${anime.slug}`}>
+							{#if anime.posterUrl}
+								<img alt={anime.title} class="h-28 w-20 rounded-[1.1rem] border border-black/8 object-cover" src={anime.posterUrl} />
+							{:else}
+								<div class="flex h-28 w-20 items-center justify-center rounded-[1.1rem] border border-dashed border-black/10 bg-cream-50 text-xs text-ink-700">
+									No art
+								</div>
+							{/if}
+
+							<div class="min-w-0 flex-1">
+								<div class="flex items-start justify-between gap-4">
+									<div>
+										<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{anime.matchReason}</p>
+										<h3 class="mt-2 line-clamp-2 text-lg font-semibold text-ink-950">{anime.title}</h3>
+									</div>
+									{#if anime.score !== null}
+										<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.score}</span>
+									{/if}
+								</div>
+
+								<p class="mt-3 text-sm text-ink-700">
+									{anime.broadcastLabel ?? anime.status ?? 'Schedule pending'}
+									{anime.episodes ? ` • ${anime.episodes} eps` : ''}
+								</p>
+								<p class="mt-4 line-clamp-3 text-sm leading-6 text-ink-700">
+									{anime.synopsis ?? 'Open the detail page to see more about this recommendation.'}
+								</p>
+							</div>
+						</a>
+					{/each}
+				</div>
+			</div>
+		{/if}
 	</div>
 </section>

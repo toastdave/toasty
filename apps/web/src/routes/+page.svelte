@@ -46,12 +46,55 @@ const futureTracks = [
 	<div class="rounded-[2rem] border border-black/8 bg-ink-950 p-8 text-cream-50 shadow-[0_24px_100px_-52px_rgba(18,23,34,0.8)]">
 		<p class="text-sm uppercase tracking-[0.28em] text-mango-300">Coming next</p>
 		<ul class="mt-5 space-y-3 text-sm leading-7 text-cream-50/90">
-			{#each futureTracks as track}
+			{#each futureTracks as track (track)}
 				<li>{track}</li>
 			{/each}
 		</ul>
 	</div>
 </section>
+
+{#if data.recommendationShelf}
+	<section class="mt-8 rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
+		<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+			<div class="max-w-3xl">
+				<p class="text-sm uppercase tracking-[0.28em] text-mango-300">Recommended next</p>
+				<h2 class="mt-2 font-display text-3xl text-ink-950">{data.recommendationShelf.heading}</h2>
+				<p class="mt-3 text-base leading-7 text-ink-700">{data.recommendationShelf.description}</p>
+			</div>
+			<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href="/me">View my anime</a>
+		</div>
+
+		<div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+			{#each data.recommendationShelf.items as anime (anime.slug)}
+				<a class="rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-5 hover:border-mango-300/70 hover:bg-white" href={`/anime/${anime.slug}`}>
+					<div class="flex gap-4">
+						{#if anime.posterUrl}
+							<img alt={anime.title} class="h-28 w-20 rounded-[1.2rem] border border-black/8 object-cover" src={anime.posterUrl} />
+						{/if}
+
+						<div class="min-w-0 flex-1">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{anime.matchReason}</p>
+									<h3 class="mt-2 line-clamp-2 text-xl font-semibold text-ink-950">{anime.title}</h3>
+								</div>
+								{#if anime.score !== null}
+									<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.score}</span>
+								{/if}
+							</div>
+							<p class="mt-3 text-sm text-ink-700">
+								{anime.type ?? 'Anime'}{anime.year ? ` • ${anime.year}` : ''}
+							</p>
+							<p class="mt-4 line-clamp-3 text-sm leading-6 text-ink-700">
+								{anime.synopsis ?? 'Open the detail page to see why this one is worth your time.'}
+							</p>
+						</div>
+					</div>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}
 
 <section class="mt-8 grid gap-6 lg:grid-cols-2">
 	<div class="rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
@@ -65,7 +108,7 @@ const futureTracks = [
 
 		<div class="mt-6 grid gap-4 sm:grid-cols-2">
 			{#if data.heroAnime.length > 0}
-				{#each data.heroAnime as anime}
+				{#each data.heroAnime as anime (anime.slug)}
 					<a class="flex gap-4 rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-4 hover:border-coral-400/60 hover:bg-white" href={`/anime/${anime.slug}`}>
 						{#if anime.posterUrl}
 							<img alt={anime.title} class="h-24 w-[4.25rem] rounded-2xl border border-black/8 object-cover" src={anime.posterUrl} />
@@ -96,7 +139,7 @@ const futureTracks = [
 
 		<div class="mt-6 space-y-3">
 			{#if data.airingNow.length > 0}
-				{#each data.airingNow as anime}
+				{#each data.airingNow as anime (anime.slug)}
 					<a class="flex items-center justify-between gap-4 rounded-[1.25rem] border border-black/8 bg-cream-50/70 px-4 py-3 hover:border-sky-300/70 hover:bg-white" href={`/anime/${anime.slug}`}>
 						<div>
 							<h3 class="font-semibold text-ink-950">{anime.title}</h3>

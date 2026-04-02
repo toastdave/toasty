@@ -42,8 +42,8 @@
 
 ## Phase 5 - Recommendation intelligence
 
-- related-title detail modules [next]
-- because-you-tracked shelves [next]
+- related-title detail modules [done, heuristic anime-first]
+- because-you-tracked shelves [done on home, heuristic anime-first]
 - explainable recommendation copy [next]
 - rating-aware recommendations [later in phase]
 - deeper profile-based personalization [later in phase]

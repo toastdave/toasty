@@ -13,6 +13,8 @@ Toasty already has a credible public anime discovery surface:
 - checklist actions on anime detail pages
 - a signed-in `/me` destination for tracked anime
 - handle-based public profile pages rooted in tracked anime
+- signed-in recommendation shelves on the landing page
+- related-title recommendation modules on anime detail pages
 
 Under the hood, the anime catalog is persisted locally and refreshed from Jikan through normalized source adapters and cached snapshots.
 
@@ -34,7 +36,7 @@ The app still needs the underlying systems that make the broader vision real.
 
 - manual sync controls and operator visibility are still missing
 - ratings are not implemented yet
-- recommendation surfaces are not implemented yet
+- recommendation surfaces are only in their first heuristic form and are not yet rating-aware
 - public activity is not implemented yet
 - tournament setup rules and admin tooling are not implemented yet
 - the app shell remains anime-first even though the schema is more general
@@ -43,7 +45,7 @@ The app still needs the underlying systems that make the broader vision real.
 
 1. manual sync controls or scripts for top anime and current season refreshes
 2. finalize the rating-system contract: universal core, flavor vectors, optional format-specific nuance, and single-page save rules
-3. build recommendation-ready discovery modules on anime detail and home surfaces
+3. deepen the new recommendation modules with stronger explanation and better candidate coverage
 4. define tournament setup rules, seeding inputs, and yearly freeze behavior
 5. add lightweight public activity and profile customization basics
 
