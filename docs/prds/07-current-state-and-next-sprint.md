@@ -15,6 +15,9 @@ Toasty already has a credible public anime discovery surface:
 - handle-based public profile pages rooted in tracked anime
 - signed-in recommendation shelves on the landing page
 - related-title recommendation modules on anime detail pages
+- lightweight public activity for rating saves, completions, and tournament votes
+- profile taste-signature cards built from dominant tags and strongest rating dimensions
+- rating-aware recommendation anchors on home and anime detail pages
 - a public anime seeding snapshot route backed by persisted yearly rankings
 - a generated anime bracket route backed by stored tournament entries and opening-round matchups
 - interactive tournament matchup pages with signed-in voting
@@ -39,21 +42,21 @@ The updated strategy is:
 The app still needs the underlying systems that make the broader vision real.
 
 - manual sync controls and operator visibility are still missing
-- ratings are not implemented yet
-- recommendation surfaces are only in their first heuristic form and are not yet rating-aware
-- public activity is not implemented yet
+- ratings are implemented in a first anime-only form, but they still need aggregate and cross-surface outputs
+- recommendation surfaces now use first-party rating signals, but they still need aggregate, completion, and profile-depth inputs
+- public activity exists in a first profile-focused form, but it still needs collections, profile reactions, and stronger filtering
 - tournament setup now has a working snapshot-to-bracket-to-vote flow, but it still needs stricter official freeze rules, rerun controls, anti-abuse protections, and later-round progression
 - the app shell remains anime-first even though the schema is more general
 
-The largest remaining gap is that ratings are still anime-only and not yet connected back into recommendations, aggregates, or tournament seeding.
+The largest remaining gap is that ratings are still anime-only and not yet connected into aggregate public scores or tournament seeding.
 
 ## Recommended next sprint
 
 1. manual sync controls or scripts for top anime and current season refreshes
-2. expand the rating contract beyond the first anime flow into aggregates, richer profile outputs, and recommendation-aware signals
-3. deepen the new recommendation modules with stronger explanation and better candidate coverage
+2. expand the rating contract into aggregate public scores and tournament-seeding inputs
+3. deepen recommendation modules with completion behavior, broader candidate coverage, and stronger profile-level loops
 4. harden the stored seeding, generated bracket, and live-vote flow with official freeze, rerun, publish, and anti-abuse rules
-5. add lightweight public activity and profile customization basics
+5. add profile customization basics around bio polish, avatar treatment, and more expressive public identity
 
 ## Explicitly not next
 

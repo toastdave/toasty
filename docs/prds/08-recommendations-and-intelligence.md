@@ -84,12 +84,12 @@ Avoid empty copy like `recommended for you` unless the system can say more.
 
 ## Current implementation posture
 
-The first recommendation slice is intentionally heuristic and anime-only.
+The first recommendation slice is still anime-only, but it is no longer purely heuristic.
 
-- home recommendations currently use the latest tracked anime as the anchor
-- detail-page recommendations currently rely on shared genre overlap and nearby metadata affinity
-- the system now has first-party rating inputs available, but recommendations do not yet use them
-- the system does not yet use flavor vectors, aggregate community scores, or deeper completion behavior
+- home recommendations can now anchor on a user's strongest positive anime rating before falling back to latest tracked anime
+- detail-page recommendations can now use a signed-in user's rating on the current anime to personalize the shelf
+- recommendation reasons now surface taste-lane language when flavor tags line up with candidate genres
+- the system still does not use aggregate community scores, richer completion patterns, or cross-media signals
 
 This is acceptable as long as the product explains the recommendation plainly and continues to improve as richer rating data ships.
 

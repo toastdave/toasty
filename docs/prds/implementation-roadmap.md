@@ -28,7 +28,7 @@
 - checklist tracking [done]
 - lightweight saved or tracked-anime page [done]
 - public profile shell [done]
-- public activity basics [next]
+- public activity basics [done in first profile form]
 - profile customization basics [next]
 
 ## Phase 4 - Ratings foundation
@@ -38,14 +38,14 @@
 - optional format-specific nuance [partially done through flavor-first anime fields]
 - single-page rich rating canvas with partial save [done in first anime-only form]
 - aggregate comparable score built from the universal core [next]
-- public taste signature outputs [next]
+- public taste signature outputs [done in first profile form]
 
 ## Phase 5 - Recommendation intelligence
 
 - related-title detail modules [done, heuristic anime-first]
 - because-you-tracked shelves [done on home, heuristic anime-first]
-- explainable recommendation copy [next]
-- rating-aware recommendations [later in phase]
+- explainable recommendation copy [done in first flavor-aware form]
+- rating-aware recommendations [done in first anime-only form]
 - deeper profile-based personalization [later in phase]
 
 ## Phase 6 - Multi-media expansion
@@ -74,4 +74,4 @@
 
 ## Current recommendation
 
-The next implementation sprint should focus on sync controls, the finalized rating-system contract, recommendation-ready discovery modules, tournament setup rules, and lightweight profile activity/customization.
+The next implementation sprint should focus on sync controls, aggregate rating outputs, tournament setup rules, and profile customization after the first activity and rating-aware recommendation slices.

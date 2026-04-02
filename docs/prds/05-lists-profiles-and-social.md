@@ -12,16 +12,18 @@ The first public shell is already live through shareable handle-based profile pa
 - users can track anime from detail pages
 - a signed-in tracked-media destination exists at `/me`, even though the current UI is still anime-first
 - a lightweight public profile shell exists at `/u/[handle]`
-- the next priority is moving profiles toward taste identity and lightweight activity, not a heavy social graph
+- profile pages now expose a first taste-signature layer through dominant tags and strongest rating dimensions
+- lightweight public activity now ships for rating saves, completions, and tournament votes
+- the next priority is profile customization and deeper identity, not a heavy social graph
 
 ## Profile evolution
 
 Profiles should grow in this order:
 
 1. tracked titles and basic identity [live]
-2. editable bio, avatar polish, and profile customization [next]
-3. rating-derived taste signature and flavor summaries
-4. lightweight recent activity
+2. rating-derived taste signature and flavor summaries [live in first form]
+3. lightweight recent activity [live in first form]
+4. editable bio, avatar polish, and profile customization [next]
 5. tournament participation, picks, rankings, and history
 
 ## Taste identity on profile pages
@@ -40,6 +42,8 @@ The first shipped version now exposes a lighter rating identity layer:
 - rated-title count
 - average Toasty score
 - per-title Toasty scores on tracked cards when available
+- dominant profile flavor tags
+- strongest rating dimensions by average score
 
 ## Lists goals
 
@@ -53,7 +57,7 @@ The first shipped version now exposes a lighter rating identity layer:
 The first social slice should stay light:
 
 - inspect public profiles [done]
-- view recent completion, rating, or collection activity [next]
+- view recent completion, rating, or tournament-vote activity [done in first form]
 - share public profile links and title reactions
 - follow users later, after the personal profile loop is solid
 
