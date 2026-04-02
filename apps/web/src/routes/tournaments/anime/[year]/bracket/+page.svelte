@@ -54,7 +54,12 @@ const { data }: { data: PageData } = $props()
 		<div class="mt-5 grid gap-4 lg:grid-cols-2">
 			{#each data.bracket.openingRoundMatchups as matchup (matchup.id)}
 				<div class="rounded-[1.25rem] border border-black/8 bg-white/90 p-5">
-					<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{matchup.label}</p>
+					<div class="flex items-center justify-between gap-3">
+						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{matchup.label}</p>
+						<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={`/tournaments/anime/${data.bracket.year}/matchups/${matchup.id}`}>
+							Open duel
+						</a>
+					</div>
 					<div class="mt-4 grid gap-3">
 						<a class="flex items-center justify-between gap-4 rounded-[1rem] border border-black/8 bg-cream-50/80 px-4 py-3 hover:border-coral-400/60 hover:bg-white" href={`/anime/${matchup.entryA.slug}`}>
 							<div>

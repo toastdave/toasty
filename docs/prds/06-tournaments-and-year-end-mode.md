@@ -126,7 +126,8 @@ The first tournament setup slice is now live as an anime seeding snapshot.
 - a public seeding snapshot page exists at `/tournaments/anime/[year]`
 - yearly rankings now act as the first persisted seeding-snapshot backbone for anime tournaments
 - the app can now generate and persist the first opening-round bracket structure from that stored snapshot
-- the current flow is still heuristic and should evolve toward stricter official freeze, rerun, and publish rules before it becomes final tournament history
+- a public matchup page now exists for generated opening-round duels, including signed-in voting
+- the current flow is still heuristic and should evolve toward stricter official freeze, rerun, publish, and anti-abuse rules before it becomes final tournament history
 
 ## Release strategy
 
@@ -137,5 +138,5 @@ Recommended order:
 1. finalize annual rules and seeding inputs
 2. harden the new snapshot pipeline with explicit freeze and republish rules
 3. build official seeding and archive surfaces
-4. deepen the generated bracket beyond opening-round structure and add live matchup voting
+4. deepen the generated bracket beyond opening-round structure and harden live matchup voting
 5. add predictions, points, and advanced ranking layers later

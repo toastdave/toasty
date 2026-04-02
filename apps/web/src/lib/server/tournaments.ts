@@ -8,6 +8,7 @@ import {
 } from '$lib/tournaments'
 import {
 	animeDetails,
+	matchupVotes,
 	matchups,
 	mediaItems,
 	mediaYearlyRankings,
@@ -15,7 +16,7 @@ import {
 	tournaments,
 	userChecklists,
 } from '@toasty/db/schema'
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
 type SeedCandidateRow = {
 	engagementCount: number
@@ -76,6 +77,23 @@ export type AnimeTournamentBracket = {
 	}>
 	slug: string
 	tournamentId: string
+	year: number
+}
+
+export type AnimeTournamentMatchupDetail = {
+	entryA: AnimeTournamentSeed
+	entryAEntryId: string
+	entryAVotes: number
+	entryB: AnimeTournamentSeed
+	entryBEntryId: string
+	entryBVotes: number
+	id: string
+	label: string
+	region: (typeof tournamentRegions)[number]
+	roundNumber: number
+	status: 'scheduled' | 'open' | 'closed' | 'finalized'
+	totalVotes: number
+	userVoteEntryId: string | null
 	year: number
 }
 
@@ -339,6 +357,19 @@ async function getStoredAnimeTournament(year: number) {
 	return tournament ?? null
 }
 
+async function ensureOpeningRoundMatchupsOpen(tournamentId: string) {
+	await db
+		.update(matchups)
+		.set({ status: 'open' })
+		.where(
+			and(
+				eq(matchups.tournamentId, tournamentId),
+				eq(matchups.roundNumber, 1),
+				eq(matchups.status, 'scheduled')
+			)
+		)
+}
+
 async function createAnimeTournamentBracket(year: number, seeds: StoredAnimeSeedRecord[]) {
 	const tournament = await db.transaction(async (tx) => {
 		const [createdTournament] = await tx
@@ -411,6 +442,8 @@ export async function getAnimeTournamentBracket(
 		tournament = await createAnimeTournamentBracket(year, seeds)
 	}
 
+	await ensureOpeningRoundMatchupsOpen(tournament.id)
+
 	const matchupRows = await db
 		.select({
 			entryAId: matchups.entryAId,
@@ -474,4 +507,138 @@ export async function getAnimeTournamentBracket(
 		tournamentId: tournament.id,
 		year,
 	}
+}
+
+export async function getAnimeTournamentMatchupDetail(
+	year: number,
+	matchupId: string,
+	userId?: string
+): Promise<AnimeTournamentMatchupDetail | null> {
+	const [matchup] = await db
+		.select({
+			entryAId: matchups.entryAId,
+			entryBId: matchups.entryBId,
+			id: matchups.id,
+			matchupNumber: matchups.matchupNumber,
+			roundNumber: matchups.roundNumber,
+			status: matchups.status,
+			tournamentId: tournaments.id,
+			year: tournaments.year,
+		})
+		.from(matchups)
+		.innerJoin(tournaments, eq(tournaments.id, matchups.tournamentId))
+		.where(
+			and(
+				eq(matchups.id, matchupId),
+				eq(tournaments.year, year),
+				eq(tournaments.mediaType, 'anime')
+			)
+		)
+		.limit(1)
+
+	if (!matchup) {
+		return null
+	}
+
+	if (matchup.roundNumber === 1 && matchup.status === 'scheduled') {
+		await ensureOpeningRoundMatchupsOpen(matchup.tournamentId)
+		matchup.status = 'open'
+	}
+
+	const seeds = await listStoredAnimeSeeds(year)
+	const entryRows = await db
+		.select({
+			id: tournamentEntries.id,
+			region: tournamentEntries.region,
+			seed: tournamentEntries.seed,
+		})
+		.from(tournamentEntries)
+		.where(inArray(tournamentEntries.id, [matchup.entryAId, matchup.entryBId]))
+
+	const entryMap = new Map(entryRows.map((entry) => [entry.id, entry]))
+	const entryA = entryMap.get(matchup.entryAId)
+	const entryB = entryMap.get(matchup.entryBId)
+
+	if (!entryA?.region || !entryB?.region) {
+		return null
+	}
+
+	const seedMap = new Map(seeds.map((seed) => [`${seed.region}:${seed.seed}`, seed]))
+	const seedA = seedMap.get(`${entryA.region}:${entryA.seed}`)
+	const seedB = seedMap.get(`${entryB.region}:${entryB.seed}`)
+
+	if (!seedA || !seedB) {
+		return null
+	}
+
+	const matchupRegion = entryA.region as (typeof tournamentRegions)[number]
+
+	const voteRows = await db
+		.select({ count: sql<number>`count(*)`, voteEntryId: matchupVotes.voteEntryId })
+		.from(matchupVotes)
+		.where(eq(matchupVotes.matchupId, matchup.id))
+		.groupBy(matchupVotes.voteEntryId)
+
+	const voteCountMap = new Map(voteRows.map((row) => [row.voteEntryId, row.count]))
+	const [userVote] = userId
+		? await db
+				.select({ voteEntryId: matchupVotes.voteEntryId })
+				.from(matchupVotes)
+				.where(and(eq(matchupVotes.matchupId, matchup.id), eq(matchupVotes.userId, userId)))
+				.orderBy(desc(matchupVotes.createdAt))
+				.limit(1)
+		: [null]
+
+	const entryAVotes = voteCountMap.get(matchup.entryAId) ?? 0
+	const entryBVotes = voteCountMap.get(matchup.entryBId) ?? 0
+
+	return {
+		entryA: seedA,
+		entryAEntryId: matchup.entryAId,
+		entryAVotes,
+		entryB: seedB,
+		entryBEntryId: matchup.entryBId,
+		entryBVotes,
+		id: matchup.id,
+		label: `${matchupRegion} region • Match ${matchup.matchupNumber}`,
+		region: matchupRegion,
+		roundNumber: matchup.roundNumber,
+		status: matchup.status,
+		totalVotes: entryAVotes + entryBVotes,
+		userVoteEntryId: userVote?.voteEntryId ?? null,
+		year: matchup.year,
+	}
+}
+
+export async function submitAnimeTournamentVote(
+	year: number,
+	matchupId: string,
+	userId: string,
+	voteEntryId: string
+) {
+	const matchup = await getAnimeTournamentMatchupDetail(year, matchupId, userId)
+
+	if (!matchup) {
+		throw new Error('Matchup not found')
+	}
+
+	if (![matchup.entryAEntryId, matchup.entryBEntryId].includes(voteEntryId)) {
+		throw new Error('Vote target is not part of this matchup')
+	}
+
+	if (!['open', 'scheduled'].includes(matchup.status)) {
+		throw new Error('Voting is closed for this matchup')
+	}
+
+	await db.transaction(async (tx) => {
+		await tx
+			.delete(matchupVotes)
+			.where(and(eq(matchupVotes.matchupId, matchupId), eq(matchupVotes.userId, userId)))
+
+		await tx.insert(matchupVotes).values({
+			matchupId,
+			userId,
+			voteEntryId,
+		})
+	})
 }
