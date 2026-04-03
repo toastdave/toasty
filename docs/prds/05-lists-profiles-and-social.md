@@ -17,6 +17,7 @@ The first public shell is already live through shareable handle-based profile pa
 - profile pages now expose a first likely-next-picks shelf based on tracked and rated anime
 - editable profile settings now cover display name, handle, bio, and avatar URL polish
 - official editorial lists and first personal lists now ship through `/lists`, with add-to-list actions on anime pages and public profile list surfaces
+- list detail pages now include first-pass collection storytelling and owner editing controls for title, visibility, notes, and order
 - the next priority is deeper social context and richer list interactions, not a heavy follow graph
 
 ## Profile evolution

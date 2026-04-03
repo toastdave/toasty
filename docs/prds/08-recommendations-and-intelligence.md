@@ -72,9 +72,9 @@ Avoid empty copy like `recommended for you` unless the system can say more.
 
 ### Stage 1 - Recommendation-ready discovery
 
-- related-title modules on detail pages [partially shipped]
-- editorial or trend-assisted shelves [not shipped]
-- because-you-tracked rows on home and profile pages [partially shipped]
+- related-title modules on detail pages [shipped in first anime-first form]
+- editorial or trend-assisted shelves [shipped in first home-page form]
+- because-you-tracked rows on home and profile pages [shipped in first anime-first form]
 
 ### Stage 2 - Rating-aware recommendations
 
@@ -91,7 +91,8 @@ The first recommendation slice is still anime-only, but it is no longer purely h
 - detail-page recommendations can now use a signed-in user's rating on the current anime to personalize the shelf
 - recommendation reasons now surface taste-lane language when flavor tags line up with candidate genres
 - recommendation ranking now uses aggregate community scores and completion volume alongside source metadata
-- the system still does not use cross-media signals or richer editorial programming
+- discovery now includes first-pass community, momentum, and list-led editorial programming alongside personalized shelves
+- the system still does not use cross-media signals or richer movement-history deltas
 
 This is acceptable as long as the product explains the recommendation plainly and continues to improve as richer rating data ships.
 

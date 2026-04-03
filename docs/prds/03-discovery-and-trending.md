@@ -32,6 +32,8 @@ Discovery pages should stay calm, premium, and hospitality-like.
 - schedule page supports day-based scanning with tabs and counts
 - anime detail pages have canonical slug redirects and stronger cross-links back into discovery
 - signed-in users now see a `because you tracked` recommendation shelf on the home page when enough catalog overlap exists
+- the home page now includes community and momentum programming shelves so discovery is not only a hero plus two browse grids
+- official and public lists now act as the first editorial discovery assist on the landing page and anime detail pages
 - anime detail pages now surface related-title recommendations based on shared genre overlap and nearby metadata affinity
 - anime detail pages now link into a single-page rating canvas for signed-in users
 - shared error handling exists for broken routes and temporary load failures
@@ -46,7 +48,7 @@ The discovery surface should evolve from a small set of browse pages into a rich
 - weekly risers and notable momentum shifts
 - compact data or metrics modules that explain what is trending
 - related-title rails on detail pages
-- recommendation shelves such as `because you tracked`, `because you rated high on`, and editorial picks
+- recommendation shelves such as `because you tracked`, `because you rated high on`, and editorial picks [done in first anime-first form]
 
 ## Cross-media expansion rules
 
@@ -75,11 +77,11 @@ Recommendation work should begin inside discovery rather than as a separate hidd
 
 - detail page related titles
 - because-you-tracked shelves on home and profile surfaces
-- editorial or trend-assisted picks
-- weekly ranked movement and breakout callouts
+- editorial or trend-assisted picks [done in first home-page form through community, momentum, and list-led programming]
+- weekly ranked movement and breakout callouts [later once richer snapshot deltas exist]
 
 ## Immediate polish backlog
 
 - add richer browse filters beyond day tabs
 - improve fallback messaging for source outages and rate limits
-- deepen recommendation modules with rating-aware explanation once the rating system is live
+- deepen recommendation modules with richer movement history and sharper cross-media confidence rules once more lanes exist

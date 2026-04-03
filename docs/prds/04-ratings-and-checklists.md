@@ -89,7 +89,7 @@ The rating UI should use a single rich page or sheet per title.
 
 This should feel like a taste canvas, not a wizard.
 
-The current anime implementation now follows this direction directly with a single-page route.
+The current anime implementation now follows this direction directly with a single-page route, live score feedback, and draft saves that keep incomplete work out of public aggregates until the core dimensions are complete.
 
 ## Completion rules
 
@@ -98,7 +98,7 @@ The current anime implementation now follows this direction directly with a sing
 - format-specific nuance remains optional
 - text reactions or reviews can remain optional and arrive later if needed
 
-This is now true in the first anime flow: core dimensions are required, flavor dimensions are optional, and a short written note is optional.
+This is now true in the first anime flow: core dimensions are required for a published score, flavor dimensions are optional, a short written note is optional, and incomplete work can be saved as a draft and resumed later.
 
 ## Rating outputs
 
@@ -119,6 +119,8 @@ The public presentation can feel fun, but the underlying model should remain und
 The current rating implementation is still anime-first and does not yet deliver the full cross-media contract.
 
 - anime uses universal-style core dimensions plus a first flavor set
+- the rating page now shows live core-progress and flavor-tag feedback while editing
+- incomplete rating drafts now persist without polluting community scores, recommendation anchors, or tournament inputs
 - profile surfaces now show rated-title count and average Toasty score
 - tracked-title cards can now show a stored Toasty score when one exists
 - anime detail pages now surface community Toasty scores, shared flavor tags, and strongest core-dimension averages

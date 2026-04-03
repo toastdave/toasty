@@ -36,7 +36,7 @@
 - universal core dimensions across anime, TV, and movies [done in first anime-only form]
 - flavor profile dimensions such as action, romance, comedy, and tension [done in first anime-only form]
 - optional format-specific nuance [partially done through flavor-first anime fields]
-- single-page rich rating canvas with partial save [done in first anime-only form]
+- single-page rich rating canvas with partial save [done with live feedback and draft persistence]
 - aggregate comparable score built from the universal core [done in first anime-only public form]
 - public taste signature outputs [done in first profile form]
 
@@ -44,6 +44,7 @@
 
 - related-title detail modules [done, heuristic anime-first]
 - because-you-tracked shelves [done on home and profile pages, anime-first]
+- editorial or trend-assisted shelves [done in first home-page programming form]
 - explainable recommendation copy [done in first flavor-aware form]
 - rating-aware recommendations [done in first anime-only form]
 - deeper profile-based personalization [done in stronger aggregate-and-completion form]
@@ -59,8 +60,8 @@
 
 - official lists [done in first editorial form]
 - personal lists [done in first public/private form]
+- recommendation-friendly collections [done in first editable storytelling form]
 - stronger activity feed [later]
-- recommendation-friendly collections [later]
 
 ## Phase 8 - Tournaments
 
@@ -69,9 +70,9 @@
 - official seeding page [done in first form, anime-first]
 - bracket generation [done in multi-round stored form, anime-first]
 - matchup voting [done in live form with first anti-abuse gate]
+- historical archive views [done with first status-summary form]
 - rankings, points, and accuracy [later]
-- historical archive views [done in first yearly hub form]
 
 ## Current recommendation
 
-The next implementation sprint should focus on richer list depth, tournament meta layers, editorial recommendation programming, and adapter prep for the first non-anime lane.
+The next implementation sprint should focus on cross-media adapter prep, prediction layers for tournaments, deeper activity and list events, and stronger ops visibility.

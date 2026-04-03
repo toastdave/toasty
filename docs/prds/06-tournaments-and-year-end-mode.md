@@ -128,6 +128,8 @@ The first tournament setup slice is now live as an anime seeding snapshot.
 - the app can now generate and persist bracket structure beyond the opening round through operator-driven publish and advance workflows
 - a public matchup page now exists for generated duels, including signed-in voting with a lightweight anti-abuse gate based on real account activity
 - an anime tournament archive hub now acts as the entry point for yearly bracket history
+- public tournament reads now stay read-only instead of implicitly publishing bracket state
+- seeding, archive, bracket, and matchup pages now expose first-pass stage, vote, and upset-status storytelling without pretending the prediction layer exists yet
 - the current flow still needs richer scheduling, prediction metas, and stronger historical storytelling before it becomes final tournament history
 
 ## Release strategy

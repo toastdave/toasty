@@ -47,18 +47,18 @@ The app still needs the underlying systems that make the broader vision real.
 
 - manual sync controls and operator visibility are still missing
 - operator controls now exist as Bun scripts, but they still need richer reporting and scheduling visibility
-- recommendation surfaces now use aggregate, completion, and profile-depth inputs, but they still need editorial programming and cross-media confidence rules
+- recommendation surfaces now use aggregate, completion, profile-depth, and first-pass editorial programming inputs, but they still need cross-media confidence rules
 - public activity exists in a stronger profile-and-list form, but it still needs reactions, filters, and richer list events
-- tournament setup now has publish and round-advance workflows, but it still needs fuller scheduling rules, prediction games, and richer historical storytelling
+- tournament setup now has publish and round-advance workflows plus first-pass status storytelling, but it still needs fuller scheduling rules, prediction games, and richer historical storytelling
 - the app shell remains anime-first even though the schema is more general
 
 The largest remaining gap is no longer aggregate scoring. It is now the jump from anime-first depth into a broader multi-lane product with stronger tournament meta and editorial programming.
 
 ## Recommended next sprint
 
-1. deepen list creation and public collection storytelling beyond the first editorial and personal list surfaces
-2. add stronger tournament scheduling, prediction, and archive storytelling layers on top of publish and advance workflows
-3. expand recommendation shelves with editorial assists and more deliberate home-page programming
+1. deepen list events and social context beyond the first editable collection surfaces
+2. add stronger tournament scheduling, prediction, and archive storytelling layers on top of the new status summaries
+3. expand recommendation shelves with movement history and sharper cross-media confidence rules
 4. keep preparing the adapter and browse model for TV and movie lanes without weakening anime depth first
 5. improve ops visibility around sync history, tournament actions, and recovery paths without exposing internal scaffolding in the consumer UI
 
