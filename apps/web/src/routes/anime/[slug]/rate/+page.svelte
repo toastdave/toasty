@@ -6,30 +6,36 @@ const { data, form }: { data: PageData; form: ActionData } = $props()
 
 const coreAxes = $derived(data.axes.filter((axis) => axis.group === 'core'))
 const flavorAxes = $derived(data.axes.filter((axis) => axis.group === 'flavor'))
-const draftScores = $state<Record<string, string>>(
-	Object.fromEntries(
-		data.axes.map((axis) => [
-			axis.key,
-			data.userRating?.scores[axis.key] !== undefined
-				? String(data.userRating.scores[axis.key])
-				: '',
-		])
-	)
-)
+const draftScores = $state<Record<string, string>>({})
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
 	dateStyle: 'medium',
 	timeStyle: 'short',
 })
 
-const liveSummary = $derived.by(() => summarizeAnimeRatingDraft(toNumericScores(draftScores)))
+const liveSummary = $derived.by(() =>
+	summarizeAnimeRatingDraft(
+		toNumericScores(
+			Object.fromEntries(data.axes.map((axis) => [axis.key, scoreForAxis(axis.key)])) as Record<
+				string,
+				string
+			>
+		)
+	)
+)
 
 function optionsForAxis(maxValue: number, minValue: number) {
 	return Array.from({ length: maxValue - minValue + 1 }, (_, index) => minValue + index)
 }
 
 function scoreForAxis(axisKey: string) {
-	return draftScores[axisKey] ?? ''
+	if (axisKey in draftScores) {
+		return draftScores[axisKey] ?? ''
+	}
+
+	return data.userRating?.scores[axisKey] !== undefined
+		? String(data.userRating.scores[axisKey])
+		: ''
 }
 
 function setAxisScore(axisKey: string, value: string) {

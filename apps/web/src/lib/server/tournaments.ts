@@ -589,7 +589,7 @@ export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArch
 	return Promise.all(
 		rankingRows.map(async (row) => {
 			const tournament = tournamentMap.get(row.year)
-			const meta = tournament ? await getTournamentMeta(tournament.id) : null
+			const meta = tournament ? await getTournamentMeta(tournament.id, tournament.status) : null
 
 			return {
 				championTitle: meta?.championTitle ?? null,
@@ -623,7 +623,10 @@ async function getStoredAnimeTournament(year: number) {
 	return tournament ?? null
 }
 
-async function getTournamentMeta(tournamentId: string) {
+async function getTournamentMeta(
+	tournamentId: string,
+	tournamentStatus: 'active' | 'complete' | 'draft'
+) {
 	const [matchupRows, [voteSummary], [championRow]] = await Promise.all([
 		db
 			.select({
@@ -650,7 +653,7 @@ async function getTournamentMeta(tournamentId: string) {
 	])
 
 	return {
-		championTitle: championRow?.title ?? null,
+		championTitle: tournamentStatus === 'complete' ? (championRow?.title ?? null) : null,
 		currentRoundLabel: getCurrentRoundLabel(matchupRows),
 		totalVotes: voteSummary?.totalVotes ?? 0,
 	}
@@ -1061,7 +1064,7 @@ export async function getAnimeTournamentBracket(
 			.from(matchups)
 			.where(eq(matchups.tournamentId, tournament.id))
 			.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber)),
-		getTournamentMeta(tournament.id),
+		getTournamentMeta(tournament.id, tournament.status),
 	])
 
 	const entryRows = await listTournamentEntryRows(tournament.id)
