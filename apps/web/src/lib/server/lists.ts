@@ -2,7 +2,15 @@ import { recordCreatedListActivity } from '$lib/server/activity'
 import { ensureAnimeMediaItemId } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import { getLandingAnimeCatalog } from '$lib/server/services/jikan/catalog'
-import { animeDetails, listItems, lists, mediaItems, user } from '@toasty/db/schema'
+import {
+	animeDetails,
+	genres,
+	listItems,
+	lists,
+	mediaItemGenres,
+	mediaItems,
+	user,
+} from '@toasty/db/schema'
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm'
 
 type ListVisibility = 'private' | 'public' | 'unlisted'
@@ -51,9 +59,11 @@ export type UserListOption = {
 }
 
 export type ListDetail = {
+	canEdit: boolean
 	description: string | null
 	id: string
 	items: Array<{
+		id: string
 		note: string | null
 		position: number
 		posterUrl: string | null
@@ -63,11 +73,26 @@ export type ListDetail = {
 		year: number | null
 	}>
 	isOfficial: boolean
+	itemCount: number
 	ownerHandle: string | null
 	ownerName: string | null
 	slug: string
+	story: {
+		averageSourceScore: number | null
+		featuredGenres: string[]
+		releaseWindowLabel: string | null
+	}
 	title: string
 	updatedAt: Date
+	visibility: ListVisibility
+}
+
+export type FeaturedListPlacement = Pick<
+	ListCard,
+	'description' | 'id' | 'isOfficial' | 'ownerHandle' | 'ownerName' | 'slug' | 'title' | 'updatedAt'
+> & {
+	itemCount: number
+	position: number
 	visibility: ListVisibility
 }
 
@@ -93,6 +118,22 @@ function toNullableNumber(value: unknown) {
 	}
 
 	return null
+}
+
+function formatReleaseWindowLabel(years: number[]) {
+	const sortedYears = [...new Set(years.filter((year) => Number.isInteger(year)))].sort(
+		(left, right) => left - right
+	)
+
+	if (sortedYears.length === 0) {
+		return null
+	}
+
+	if (sortedYears.length === 1) {
+		return String(sortedYears[0])
+	}
+
+	return `${sortedYears[0]}-${sortedYears[sortedYears.length - 1]}`
 }
 
 async function getExistingListSlug(slug: string) {
@@ -327,6 +368,71 @@ export async function listUserListOptions(userId: string) {
 	return rows satisfies UserListOption[]
 }
 
+async function buildListStory(listId: string) {
+	const [[averageRow], yearRows, genreRows] = await Promise.all([
+		db
+			.select({
+				averageScore: sql<string | null>`avg(${animeDetails.sourceScore})`,
+			})
+			.from(listItems)
+			.leftJoin(animeDetails, eq(animeDetails.mediaItemId, listItems.mediaItemId))
+			.where(eq(listItems.listId, listId)),
+		db
+			.select({ year: animeDetails.year })
+			.from(listItems)
+			.leftJoin(animeDetails, eq(animeDetails.mediaItemId, listItems.mediaItemId))
+			.where(eq(listItems.listId, listId)),
+		db
+			.select({ count: sql<number>`count(*)`, genreName: genres.name })
+			.from(listItems)
+			.innerJoin(mediaItemGenres, eq(mediaItemGenres.mediaItemId, listItems.mediaItemId))
+			.innerJoin(genres, eq(genres.id, mediaItemGenres.genreId))
+			.where(eq(listItems.listId, listId))
+			.groupBy(genres.name)
+			.orderBy(desc(sql<number>`count(*)`), asc(genres.name))
+			.limit(3),
+	])
+
+	const years = yearRows
+		.map((row) => row.year)
+		.filter((year): year is number => typeof year === 'number')
+
+	return {
+		averageSourceScore: toNullableNumber(averageRow?.averageScore),
+		featuredGenres: genreRows.map((row) => row.genreName),
+		releaseWindowLabel: formatReleaseWindowLabel(years),
+	}
+}
+
+async function getOwnedList(listId: string, userId: string) {
+	const [list] = await db
+		.select({ id: lists.id })
+		.from(lists)
+		.where(and(eq(lists.id, listId), eq(lists.ownerUserId, userId)))
+		.limit(1)
+
+	if (!list) {
+		throw new Error('List not found')
+	}
+
+	return list
+}
+
+async function normalizeListItemPositions(listId: string) {
+	const items = await db
+		.select({ id: listItems.id })
+		.from(listItems)
+		.where(eq(listItems.listId, listId))
+		.orderBy(asc(listItems.position), asc(listItems.id))
+
+	for (const [index, item] of items.entries()) {
+		await db
+			.update(listItems)
+			.set({ position: index + 1 })
+			.where(eq(listItems.id, item.id))
+	}
+}
+
 export async function createUserList(params: {
 	description?: string | null
 	title: string
@@ -400,6 +506,166 @@ export async function addAnimeToUserList(params: {
 	await db.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, params.listId))
 }
 
+export async function updateUserList(params: {
+	description?: string | null
+	listId: string
+	title: string
+	userId: string
+	visibility: ListVisibility
+}) {
+	await getOwnedList(params.listId, params.userId)
+
+	await db
+		.update(lists)
+		.set({
+			description: params.description ?? null,
+			title: params.title,
+			updatedAt: new Date(),
+			visibility: params.visibility,
+		})
+		.where(eq(lists.id, params.listId))
+}
+
+export async function updateListItemNote(params: {
+	itemId: string
+	listId: string
+	note?: string | null
+	userId: string
+}) {
+	await getOwnedList(params.listId, params.userId)
+
+	await db
+		.update(listItems)
+		.set({ note: params.note ?? null })
+		.where(and(eq(listItems.id, params.itemId), eq(listItems.listId, params.listId)))
+
+	await db.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, params.listId))
+}
+
+export async function removeAnimeFromUserList(params: {
+	itemId: string
+	listId: string
+	userId: string
+}) {
+	await getOwnedList(params.listId, params.userId)
+
+	await db
+		.delete(listItems)
+		.where(and(eq(listItems.id, params.itemId), eq(listItems.listId, params.listId)))
+
+	await normalizeListItemPositions(params.listId)
+	await db.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, params.listId))
+}
+
+export async function moveAnimeWithinUserList(params: {
+	direction: 'down' | 'up'
+	itemId: string
+	listId: string
+	userId: string
+}) {
+	await getOwnedList(params.listId, params.userId)
+
+	const items = await db
+		.select({ id: listItems.id, position: listItems.position })
+		.from(listItems)
+		.where(eq(listItems.listId, params.listId))
+		.orderBy(asc(listItems.position), asc(listItems.id))
+
+	const currentIndex = items.findIndex((item) => item.id === params.itemId)
+
+	if (currentIndex === -1) {
+		throw new Error('List item not found')
+	}
+
+	const targetIndex = params.direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+	if (targetIndex < 0 || targetIndex >= items.length) {
+		return
+	}
+
+	const currentItem = items[currentIndex]
+	const targetItem = items[targetIndex]
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(listItems)
+			.set({ position: targetItem.position })
+			.where(eq(listItems.id, currentItem.id))
+
+		await tx
+			.update(listItems)
+			.set({ position: currentItem.position })
+			.where(eq(listItems.id, targetItem.id))
+
+		await tx.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, params.listId))
+	})
+}
+
+export async function deleteUserList(params: { listId: string; userId: string }) {
+	await getOwnedList(params.listId, params.userId)
+	await db.delete(lists).where(eq(lists.id, params.listId))
+}
+
+export async function listPublicListsFeaturingAnime(
+	malId: number,
+	limit = 4
+): Promise<FeaturedListPlacement[]> {
+	const [mediaItem] = await db
+		.select({ mediaItemId: animeDetails.mediaItemId })
+		.from(animeDetails)
+		.where(eq(animeDetails.jikanMalId, String(malId)))
+		.limit(1)
+
+	if (!mediaItem) {
+		return []
+	}
+
+	const rows = await db
+		.select({
+			description: lists.description,
+			id: lists.id,
+			isOfficial: lists.isOfficial,
+			itemCount: sql<number>`(
+				select count(*)
+				from ${listItems} as li_count
+				where li_count.list_id = ${lists.id}
+			)`,
+			ownerHandle: user.handle,
+			ownerName: user.name,
+			position: listItems.position,
+			slug: lists.slug,
+			title: lists.title,
+			updatedAt: lists.updatedAt,
+			visibility: lists.visibility,
+		})
+		.from(lists)
+		.innerJoin(listItems, eq(listItems.listId, lists.id))
+		.leftJoin(user, eq(user.id, lists.ownerUserId))
+		.where(
+			and(
+				eq(listItems.mediaItemId, mediaItem.mediaItemId),
+				or(eq(lists.visibility, 'public'), eq(lists.isOfficial, true))
+			)
+		)
+		.groupBy(lists.id, listItems.position, user.handle, user.name)
+		.orderBy(desc(lists.isOfficial), asc(listItems.position), desc(lists.updatedAt))
+		.limit(limit)
+
+	return rows.map((row) => ({
+		description: row.description,
+		id: row.id,
+		isOfficial: row.isOfficial,
+		itemCount: row.itemCount,
+		ownerHandle: row.ownerHandle,
+		ownerName: row.ownerName,
+		position: row.position,
+		slug: row.slug,
+		title: row.title,
+		updatedAt: row.updatedAt,
+		visibility: row.visibility,
+	}))
+}
+
 export async function getListBySlug(
 	slug: string,
 	viewerUserId?: string
@@ -430,33 +696,41 @@ export async function getListBySlug(
 		list.isOfficial ||
 		list.visibility !== 'private' ||
 		(viewerUserId ? viewerUserId === list.ownerUserId : false)
+	const canEdit = viewerUserId ? viewerUserId === list.ownerUserId : false
 
 	if (!canView) {
 		return null
 	}
 
-	const items = await db
-		.select({
-			note: listItems.note,
-			position: listItems.position,
-			posterUrl: mediaItems.imageUrlPoster,
-			score: animeDetails.sourceScore,
-			slug: mediaItems.slug,
-			title: mediaItems.title,
-			year: animeDetails.year,
-		})
-		.from(listItems)
-		.innerJoin(mediaItems, eq(mediaItems.id, listItems.mediaItemId))
-		.leftJoin(animeDetails, eq(animeDetails.mediaItemId, mediaItems.id))
-		.where(eq(listItems.listId, list.id))
-		.orderBy(asc(listItems.position), asc(mediaItems.title))
+	const [items, story] = await Promise.all([
+		db
+			.select({
+				id: listItems.id,
+				note: listItems.note,
+				position: listItems.position,
+				posterUrl: mediaItems.imageUrlPoster,
+				score: animeDetails.sourceScore,
+				slug: mediaItems.slug,
+				title: mediaItems.title,
+				year: animeDetails.year,
+			})
+			.from(listItems)
+			.innerJoin(mediaItems, eq(mediaItems.id, listItems.mediaItemId))
+			.leftJoin(animeDetails, eq(animeDetails.mediaItemId, mediaItems.id))
+			.where(eq(listItems.listId, list.id))
+			.orderBy(asc(listItems.position), asc(mediaItems.title)),
+		buildListStory(list.id),
+	])
 
 	return {
+		canEdit,
 		description: list.description,
 		id: list.id,
+		itemCount: items.length,
 		items: items
 			.filter((item) => Boolean(item.slug))
 			.map((item) => ({
+				id: item.id,
 				note: item.note,
 				position: item.position,
 				posterUrl: item.posterUrl,
@@ -469,6 +743,7 @@ export async function getListBySlug(
 		ownerHandle: list.ownerHandle,
 		ownerName: list.ownerName,
 		slug: list.slug,
+		story,
 		title: list.title,
 		updatedAt: list.updatedAt,
 		visibility: list.visibility,

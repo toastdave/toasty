@@ -82,6 +82,12 @@ function votePercent(votes: number, totalVotes: number) {
 		</button>
 	</form>
 
+	{#if data.matchup.upsetLabel}
+		<div class="mt-6 rounded-[1.5rem] border border-mango-300/60 bg-mango-300/15 px-5 py-4 text-sm font-semibold text-ink-950">
+			{data.matchup.upsetLabel}
+		</div>
+	{/if}
+
 	<div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-black/8 bg-cream-50/70 px-5 py-4 text-sm text-ink-700">
 		<div>
 			{#if data.user}

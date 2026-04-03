@@ -169,6 +169,22 @@ async function saveActivityEvent(params: {
 	})
 }
 
+async function deleteActivityEvent(params: {
+	entityId: string
+	type: 'completed' | 'created_list' | 'rated' | 'voted'
+	userId: string
+}) {
+	await db
+		.delete(activityEvents)
+		.where(
+			and(
+				eq(activityEvents.entityId, params.entityId),
+				eq(activityEvents.type, params.type),
+				eq(activityEvents.userId, params.userId)
+			)
+		)
+}
+
 export async function getAnimeActivitySubjectByMediaItemId(mediaItemId: string) {
 	const [row] = await db
 		.select({
@@ -246,6 +262,14 @@ export async function recordAnimeRatingActivity(params: {
 			overallScore: params.overallScore,
 			tags: params.tags,
 		},
+		type: 'rated',
+		userId: params.userId,
+	})
+}
+
+export async function clearAnimeRatingActivity(params: { mediaItemId: string; userId: string }) {
+	await deleteActivityEvent({
+		entityId: params.mediaItemId,
 		type: 'rated',
 		userId: params.userId,
 	})

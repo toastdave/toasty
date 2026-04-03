@@ -1,11 +1,10 @@
 import {
 	type RatingAxisGroup,
 	animeRatingAxisBlueprints,
-	computeOverallRating,
-	extractDominantFlavorTags,
 	getAnimeAxisBlueprint,
+	summarizeAnimeRatingDraft,
 } from '$lib/ratings'
-import { recordAnimeRatingActivity } from '$lib/server/activity'
+import { clearAnimeRatingActivity, recordAnimeRatingActivity } from '$lib/server/activity'
 import { ensureAnimeMediaItemId } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import {
@@ -17,7 +16,7 @@ import {
 	userRatingAxisScores,
 	userRatings,
 } from '@toasty/db/schema'
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
 const ANIME_RUBRIC_NAME = 'Anime universal rubric'
 const ANIME_RUBRIC_VERSION = 2
@@ -36,6 +35,7 @@ type RatingAxisRecord = {
 }
 
 export type AnimeUserRating = {
+	isDraft: boolean
 	overallScore: number | null
 	reviewText: string | null
 	scores: Record<string, number>
@@ -125,7 +125,13 @@ async function recomputeAnimeAggregateRatingRecord(mediaItemId: string, rubricId
 				ratingCount: sql<number>`count(*)`,
 			})
 			.from(userRatings)
-			.where(and(eq(userRatings.mediaItemId, mediaItemId), eq(userRatings.rubricId, rubricId))),
+			.where(
+				and(
+					eq(userRatings.mediaItemId, mediaItemId),
+					eq(userRatings.rubricId, rubricId),
+					isNotNull(userRatings.overallScore)
+				)
+			),
 		db
 			.select({
 				average: sql<string>`avg(${userRatingAxisScores.score})`,
@@ -134,7 +140,13 @@ async function recomputeAnimeAggregateRatingRecord(mediaItemId: string, rubricId
 			.from(userRatingAxisScores)
 			.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
 			.innerJoin(userRatings, eq(userRatings.id, userRatingAxisScores.userRatingId))
-			.where(and(eq(userRatings.mediaItemId, mediaItemId), eq(userRatings.rubricId, rubricId)))
+			.where(
+				and(
+					eq(userRatings.mediaItemId, mediaItemId),
+					eq(userRatings.rubricId, rubricId),
+					isNotNull(userRatings.overallScore)
+				)
+			)
 			.groupBy(ratingAxes.key),
 	])
 
@@ -294,7 +306,11 @@ export async function getAnimeAggregateRatingMap(mediaItemIds: string[]) {
 		.select({ mediaItemId: userRatings.mediaItemId })
 		.from(userRatings)
 		.where(
-			and(inArray(userRatings.mediaItemId, missingMediaItemIds), eq(userRatings.rubricId, rubricId))
+			and(
+				inArray(userRatings.mediaItemId, missingMediaItemIds),
+				eq(userRatings.rubricId, rubricId),
+				isNotNull(userRatings.overallScore)
+			)
 		)
 		.groupBy(userRatings.mediaItemId)
 
@@ -386,6 +402,7 @@ export async function getAnimeUserRating(
 		.where(eq(userRatingAxisScores.userRatingId, rating.id))
 
 	return {
+		isDraft: rating.overallScore === null,
 		overallScore: toNullableNumber(rating.overallScore),
 		reviewText: rating.reviewText,
 		scores: Object.fromEntries(
@@ -411,8 +428,9 @@ export async function saveAnimeUserRating(
 	const mediaItemId = await ensureAnimeMediaItemId(malId, fetcher)
 	const axes = await listAnimeRatingAxes()
 	const axisIdMap = new Map(axes.map((axis) => [axis.key, axis.id]))
-	const overallScore = computeOverallRating(scores)
-	const tags = extractDominantFlavorTags(scores)
+	const draftSummary = summarizeAnimeRatingDraft(scores)
+	const overallScore = draftSummary.overallScore
+	const tags = draftSummary.tags
 
 	const existingRatings = await db
 		.select({ id: userRatings.id })
@@ -468,16 +486,20 @@ export async function saveAnimeUserRating(
 		}
 	})
 
-	await recordAnimeRatingActivity({
-		mediaItemId,
-		overallScore,
-		tags,
-		userId,
-	})
+	if (draftSummary.isComplete) {
+		await recordAnimeRatingActivity({
+			mediaItemId,
+			overallScore,
+			tags,
+			userId,
+		})
+	} else {
+		await clearAnimeRatingActivity({ mediaItemId, userId })
+	}
 
 	await recomputeAnimeAggregateRatingRecord(mediaItemId, rubricId)
 
-	return overallScore
+	return draftSummary
 }
 
 export async function getAnimeCommunityRatingSummary(
@@ -498,7 +520,7 @@ export async function getAnimeCommunityRatingSummary(
 		db
 			.select({ tagsJsonb: userRatings.tagsJsonb })
 			.from(userRatings)
-			.where(eq(userRatings.mediaItemId, mediaItemId)),
+			.where(and(eq(userRatings.mediaItemId, mediaItemId), isNotNull(userRatings.overallScore))),
 	])
 
 	const aggregate = aggregateMap.get(mediaItemId)
@@ -562,11 +584,11 @@ export async function getUserRatingSnapshot(userId: string): Promise<UserRatingS
 				ratedCount: sql<number>`count(*)`,
 			})
 			.from(userRatings)
-			.where(eq(userRatings.userId, userId)),
+			.where(and(eq(userRatings.userId, userId), isNotNull(userRatings.overallScore))),
 		db
 			.select({ tagsJsonb: userRatings.tagsJsonb })
 			.from(userRatings)
-			.where(eq(userRatings.userId, userId)),
+			.where(and(eq(userRatings.userId, userId), isNotNull(userRatings.overallScore))),
 		db
 			.select({
 				average: sql<string>`avg(${userRatingAxisScores.score})`,
@@ -575,7 +597,7 @@ export async function getUserRatingSnapshot(userId: string): Promise<UserRatingS
 			.from(userRatingAxisScores)
 			.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
 			.innerJoin(userRatings, eq(userRatings.id, userRatingAxisScores.userRatingId))
-			.where(eq(userRatings.userId, userId))
+			.where(and(eq(userRatings.userId, userId), isNotNull(userRatings.overallScore)))
 			.groupBy(ratingAxes.key),
 	])
 

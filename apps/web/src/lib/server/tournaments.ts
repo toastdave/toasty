@@ -106,6 +106,12 @@ export type AnimeTournamentBracket = {
 		roundNumber: number
 	}>
 	slug: string
+	summary: {
+		championTitle: string | null
+		currentRoundLabel: string | null
+		liveMatchupCount: number
+		totalVotes: number
+	}
 	tournamentId: string
 	year: number
 }
@@ -123,14 +129,18 @@ export type AnimeTournamentMatchupDetail = {
 	roundNumber: number
 	status: 'scheduled' | 'open' | 'closed' | 'finalized'
 	totalVotes: number
+	upsetLabel: string | null
 	userVoteEntryId: string | null
 	year: number
 }
 
 export type AnimeTournamentArchiveCard = {
+	championTitle: string | null
+	currentRoundLabel: string | null
 	entryCount: number
 	hasBracket: boolean
 	status: 'active' | 'complete' | 'draft' | 'preview'
+	totalVotes: number
 	updatedAt: Date
 	year: number
 }
@@ -197,6 +207,53 @@ function getRoundRegionLabel(roundNumber: number, region: (typeof tournamentRegi
 	}
 
 	return 'Title Match' as const
+}
+
+function getCurrentRoundLabel(
+	rows: Array<{ roundNumber: number; status: 'scheduled' | 'open' | 'closed' | 'finalized' }>
+) {
+	const nextRound = rows.find((row) => row.status !== 'finalized')
+
+	if (nextRound) {
+		return getRoundLabel(nextRound.roundNumber)
+	}
+
+	const lastRound = rows.at(-1)
+	return lastRound ? getRoundLabel(lastRound.roundNumber) : null
+}
+
+function getUpsetLabel(params: {
+	entryASeed: number
+	entryAVotes: number
+	entryBSeed: number
+	entryBVotes: number
+	status: 'scheduled' | 'open' | 'closed' | 'finalized'
+	winnerEntryId: string | null
+	entryAEntryId: string
+	entryBEntryId: string
+}) {
+	const lowerSeedEntryId =
+		params.entryASeed > params.entryBSeed ? params.entryAEntryId : params.entryBEntryId
+	const lowerSeed = Math.max(params.entryASeed, params.entryBSeed)
+	const higherSeed = Math.min(params.entryASeed, params.entryBSeed)
+
+	if (lowerSeed === higherSeed) {
+		return null
+	}
+
+	const lowerSeedLeading =
+		(params.entryASeed > params.entryBSeed && params.entryAVotes > params.entryBVotes) ||
+		(params.entryBSeed > params.entryASeed && params.entryBVotes > params.entryAVotes)
+
+	if (params.status === 'finalized' && params.winnerEntryId === lowerSeedEntryId) {
+		return `Upset locked in: #${lowerSeed} over #${higherSeed}`
+	}
+
+	if (params.status !== 'scheduled' && lowerSeedLeading) {
+		return `Upset watch: #${lowerSeed} is leading #${higherSeed}`
+	}
+
+	return null
 }
 
 async function getAnimeCandidateYear(preferredYear?: number) {
@@ -511,6 +568,7 @@ export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArch
 			.orderBy(desc(mediaYearlyRankings.year)),
 		db
 			.select({
+				id: tournaments.id,
 				status: tournaments.status,
 				updatedAt: tournaments.updatedAt,
 				year: tournaments.year,
@@ -528,17 +586,23 @@ export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArch
 		}
 	}
 
-	return rankingRows.map((row) => {
-		const tournament = tournamentMap.get(row.year)
+	return Promise.all(
+		rankingRows.map(async (row) => {
+			const tournament = tournamentMap.get(row.year)
+			const meta = tournament ? await getTournamentMeta(tournament.id) : null
 
-		return {
-			entryCount: row.entryCount,
-			hasBracket: Boolean(tournament),
-			status: tournament?.status ?? 'preview',
-			updatedAt: toDate(tournament?.updatedAt ?? row.updatedAt) ?? new Date(),
-			year: row.year,
-		}
-	})
+			return {
+				championTitle: meta?.championTitle ?? null,
+				currentRoundLabel: meta?.currentRoundLabel ?? null,
+				entryCount: row.entryCount,
+				hasBracket: Boolean(tournament),
+				status: tournament?.status ?? 'preview',
+				totalVotes: meta?.totalVotes ?? 0,
+				updatedAt: toDate(tournament?.updatedAt ?? row.updatedAt) ?? new Date(),
+				year: row.year,
+			}
+		})
+	)
 }
 
 async function getStoredAnimeTournament(year: number) {
@@ -557,6 +621,39 @@ async function getStoredAnimeTournament(year: number) {
 		.limit(1)
 
 	return tournament ?? null
+}
+
+async function getTournamentMeta(tournamentId: string) {
+	const [matchupRows, [voteSummary], [championRow]] = await Promise.all([
+		db
+			.select({
+				roundNumber: matchups.roundNumber,
+				status: matchups.status,
+				winnerEntryId: matchups.winnerEntryId,
+			})
+			.from(matchups)
+			.where(eq(matchups.tournamentId, tournamentId))
+			.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber)),
+		db
+			.select({ totalVotes: sql<number>`count(*)` })
+			.from(matchupVotes)
+			.innerJoin(matchups, eq(matchups.id, matchupVotes.matchupId))
+			.where(eq(matchups.tournamentId, tournamentId)),
+		db
+			.select({ title: mediaItems.title })
+			.from(matchups)
+			.innerJoin(tournamentEntries, eq(tournamentEntries.id, matchups.winnerEntryId))
+			.innerJoin(mediaItems, eq(mediaItems.id, tournamentEntries.mediaItemId))
+			.where(and(eq(matchups.tournamentId, tournamentId), eq(matchups.status, 'finalized')))
+			.orderBy(desc(matchups.roundNumber), desc(matchups.matchupNumber))
+			.limit(1),
+	])
+
+	return {
+		championTitle: championRow?.title ?? null,
+		currentRoundLabel: getCurrentRoundLabel(matchupRows),
+		totalVotes: voteSummary?.totalVotes ?? 0,
+	}
 }
 
 async function openTournamentRound(tournamentId: string, roundNumber: number) {
@@ -944,25 +1041,28 @@ export async function getAnimeTournamentBracket(
 		return null
 	}
 
-	const tournament = await publishAnimeTournament(year)
+	const tournament = await getStoredAnimeTournament(year)
 
 	if (!tournament) {
 		return null
 	}
 
-	const matchupRows = await db
-		.select({
-			entryAId: matchups.entryAId,
-			entryBId: matchups.entryBId,
-			id: matchups.id,
-			matchupNumber: matchups.matchupNumber,
-			roundNumber: matchups.roundNumber,
-			status: matchups.status,
-			winnerEntryId: matchups.winnerEntryId,
-		})
-		.from(matchups)
-		.where(eq(matchups.tournamentId, tournament.id))
-		.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber))
+	const [matchupRows, meta] = await Promise.all([
+		db
+			.select({
+				entryAId: matchups.entryAId,
+				entryBId: matchups.entryBId,
+				id: matchups.id,
+				matchupNumber: matchups.matchupNumber,
+				roundNumber: matchups.roundNumber,
+				status: matchups.status,
+				winnerEntryId: matchups.winnerEntryId,
+			})
+			.from(matchups)
+			.where(eq(matchups.tournamentId, tournament.id))
+			.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber)),
+		getTournamentMeta(tournament.id),
+	])
 
 	const entryRows = await listTournamentEntryRows(tournament.id)
 
@@ -1019,6 +1119,12 @@ export async function getAnimeTournamentBracket(
 		})),
 		rounds,
 		slug: tournament.slug,
+		summary: {
+			championTitle: meta.championTitle,
+			currentRoundLabel: meta.currentRoundLabel,
+			liveMatchupCount: matchupRows.filter((matchup) => matchup.status === 'open').length,
+			totalVotes: meta.totalVotes,
+		},
 		tournamentId: tournament.id,
 		year,
 	}
@@ -1029,8 +1135,6 @@ export async function getAnimeTournamentMatchupDetail(
 	matchupId: string,
 	userId?: string
 ): Promise<AnimeTournamentMatchupDetail | null> {
-	await publishAnimeTournament(year)
-
 	const [matchup] = await db
 		.select({
 			entryAId: matchups.entryAId,
@@ -1040,6 +1144,7 @@ export async function getAnimeTournamentMatchupDetail(
 			roundNumber: matchups.roundNumber,
 			status: matchups.status,
 			tournamentId: tournaments.id,
+			winnerEntryId: matchups.winnerEntryId,
 			year: tournaments.year,
 		})
 		.from(matchups)
@@ -1119,6 +1224,16 @@ export async function getAnimeTournamentMatchupDetail(
 		roundNumber: matchup.roundNumber,
 		status: matchup.status,
 		totalVotes: entryAVotes + entryBVotes,
+		upsetLabel: getUpsetLabel({
+			entryAEntryId: matchup.entryAId,
+			entryASeed: seedA.seed,
+			entryAVotes,
+			entryBEntryId: matchup.entryBId,
+			entryBSeed: seedB.seed,
+			entryBVotes,
+			status: matchup.status,
+			winnerEntryId: matchup.winnerEntryId,
+		}),
 		userVoteEntryId: userVote?.voteEntryId ?? null,
 		year: matchup.year,
 	}
@@ -1129,7 +1244,7 @@ async function ensureTournamentVoterEligible(userId: string) {
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(userRatings)
-			.where(eq(userRatings.userId, userId)),
+			.where(and(eq(userRatings.userId, userId), isNotNull(userRatings.overallScore))),
 		db
 			.select({
 				completedCount: sql<number>`count(*) filter (where ${userChecklists.status} = 'done')`,
@@ -1166,7 +1281,7 @@ export async function submitAnimeTournamentVote(
 		throw new Error('Vote target is not part of this matchup')
 	}
 
-	if (!['open', 'scheduled'].includes(matchup.status)) {
+	if (matchup.status !== 'open') {
 		throw new Error('Voting is closed for this matchup')
 	}
 

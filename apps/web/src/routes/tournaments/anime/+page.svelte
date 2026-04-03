@@ -32,6 +32,12 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 					{archive.entryCount} seeded title{archive.entryCount === 1 ? '' : 's'}
 					{archive.hasBracket ? ' • bracket available' : ' • seeding only'}
 				</p>
+				{#if archive.currentRoundLabel || archive.championTitle}
+					<p class="mt-3 text-sm leading-6 text-ink-700">
+						{archive.championTitle ? `Champion ${archive.championTitle}` : archive.currentRoundLabel}
+						{archive.totalVotes ? ` • ${archive.totalVotes} votes` : ''}
+					</p>
+				{/if}
 				<p class="mt-4 text-sm text-ink-700">Updated {dateFormatter.format(archive.updatedAt)}</p>
 			</a>
 		{/each}

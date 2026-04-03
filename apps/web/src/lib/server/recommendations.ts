@@ -14,7 +14,7 @@ import {
 	userChecklists,
 	userRatings,
 } from '@toasty/db/schema'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 
 type StoredAnimeRow = {
 	airedFrom: Date | null
@@ -291,8 +291,12 @@ async function getRatedAnimeReference(
 		.innerJoin(animeDetails, eq(animeDetails.mediaItemId, mediaItems.id))
 		.where(
 			mediaItemId
-				? and(eq(userRatings.userId, userId), eq(userRatings.mediaItemId, mediaItemId))
-				: eq(userRatings.userId, userId)
+				? and(
+						eq(userRatings.userId, userId),
+						eq(userRatings.mediaItemId, mediaItemId),
+						isNotNull(userRatings.overallScore)
+					)
+				: and(eq(userRatings.userId, userId), isNotNull(userRatings.overallScore))
 		)
 		.orderBy(desc(userRatings.overallScore), desc(userRatings.updatedAt))
 		.limit(mediaItemId ? 1 : 6)

@@ -6,7 +6,11 @@ import {
 	removeAnimeChecklistEntry,
 	saveAnimeChecklistEntry,
 } from '$lib/server/checklists'
-import { addAnimeToUserList, listUserListOptions } from '$lib/server/lists'
+import {
+	addAnimeToUserList,
+	listPublicListsFeaturingAnime,
+	listUserListOptions,
+} from '$lib/server/lists'
 import { getAnimeCommunityRatingSummary, getAnimeUserRating } from '$lib/server/ratings'
 import { getAnimeDetailRecommendationShelf } from '$lib/server/recommendations'
 import { getAnimeDetailCatalog } from '$lib/server/services/jikan/catalog'
@@ -29,19 +33,27 @@ export const load: PageServerLoad = async ({ locals, params, fetch }) => {
 		throw redirect(308, `/anime/${canonicalSlug}`)
 	}
 
-	const [checklistEntry, communityRating, recommendationShelf, userLists, userRating] =
-		await Promise.all([
-			locals.user ? getAnimeChecklistEntry(locals.user.id, animeId) : null,
-			getAnimeCommunityRatingSummary(animeId),
-			getAnimeDetailRecommendationShelf(animeId, locals.user?.id),
-			locals.user ? listUserListOptions(locals.user.id) : [],
-			locals.user ? getAnimeUserRating(locals.user.id, animeId) : null,
-		])
+	const [
+		checklistEntry,
+		communityRating,
+		featuredLists,
+		recommendationShelf,
+		userLists,
+		userRating,
+	] = await Promise.all([
+		locals.user ? getAnimeChecklistEntry(locals.user.id, animeId) : null,
+		getAnimeCommunityRatingSummary(animeId),
+		listPublicListsFeaturingAnime(animeId),
+		getAnimeDetailRecommendationShelf(animeId, locals.user?.id),
+		locals.user ? listUserListOptions(locals.user.id) : [],
+		locals.user ? getAnimeUserRating(locals.user.id, animeId) : null,
+	])
 
 	return {
 		anime,
 		checklistEntry,
 		communityRating,
+		featuredLists,
 		recommendationShelf,
 		userLists,
 		userRating,

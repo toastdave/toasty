@@ -96,6 +96,55 @@ const futureTracks = [
 	</section>
 {/if}
 
+{#if data.discoveryShelves.length > 0}
+	<section class="mt-8 grid gap-6 xl:grid-cols-2">
+		{#each data.discoveryShelves as shelf (shelf.heading)}
+			<div class="rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
+				<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+					<div class="max-w-3xl">
+						<p class="text-sm uppercase tracking-[0.28em] text-sky-300">{shelf.label}</p>
+						<h2 class="mt-2 font-display text-3xl text-ink-950">{shelf.heading}</h2>
+						<p class="mt-3 text-base leading-7 text-ink-700">{shelf.description}</p>
+					</div>
+					<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href={shelf.href}>Open board</a>
+				</div>
+
+				<div class="mt-6 grid gap-4 sm:grid-cols-2">
+					{#each shelf.items as anime (anime.slug)}
+						<a class="rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-5 hover:border-sky-300/70 hover:bg-white" href={`/anime/${anime.slug}`}>
+							<div class="flex gap-4">
+								{#if anime.posterUrl}
+									<img alt={anime.title} class="h-28 w-20 rounded-[1.2rem] border border-black/8 object-cover" src={anime.posterUrl} />
+								{/if}
+
+								<div class="min-w-0 flex-1">
+									<div class="flex items-start justify-between gap-4">
+										<div>
+											<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{anime.caption}</p>
+											<h3 class="mt-2 line-clamp-2 text-xl font-semibold text-ink-950">{anime.title}</h3>
+										</div>
+										{#if anime.communityScore !== null}
+											<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{anime.communityScore}</span>
+										{/if}
+									</div>
+									<p class="mt-3 text-sm text-ink-700">
+										{anime.broadcastLabel ?? anime.status ?? 'Schedule pending'}
+										{anime.trackedCount ? ` • ${anime.trackedCount} tracked` : ''}
+										{anime.completedCount ? ` • ${anime.completedCount} finished` : ''}
+									</p>
+									<p class="mt-4 line-clamp-3 text-sm leading-6 text-ink-700">
+										{anime.synopsis ?? 'Open the detail page to see why this one is earning attention.'}
+									</p>
+								</div>
+							</div>
+						</a>
+					{/each}
+				</div>
+			</div>
+		{/each}
+	</section>
+{/if}
+
 {#if data.tournamentPreview}
 	<section class="mt-8 rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
 		<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -134,6 +183,32 @@ const futureTracks = [
 							</p>
 						</div>
 					</div>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}
+
+{#if data.featuredLists.length > 0}
+	<section class="mt-8 rounded-[1.75rem] border border-black/8 bg-white/80 p-7 shadow-[0_24px_80px_-60px_rgba(18,23,34,0.5)] backdrop-blur">
+		<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+			<div class="max-w-3xl">
+				<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Curated lanes</p>
+				<h2 class="mt-2 font-display text-3xl text-ink-950">Editorial shelves make the browse loop less random.</h2>
+				<p class="mt-3 text-base leading-7 text-ink-700">Open a Toasty list when you want a stronger point of view than a raw chart can give you.</p>
+			</div>
+			<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href="/lists">See all lists</a>
+		</div>
+
+		<div class="mt-6 grid gap-4 lg:grid-cols-3">
+			{#each data.featuredLists as list (list.id)}
+				<a class="rounded-[1.5rem] border border-black/8 bg-cream-50/70 p-5 hover:border-coral-400/60 hover:bg-white" href={`/lists/${list.slug}`}>
+					<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{list.isOfficial ? 'Official list' : `By @${list.ownerHandle ?? 'toasty'}`}</p>
+					<h3 class="mt-2 text-xl font-semibold text-ink-950">{list.title}</h3>
+					<p class="mt-3 text-sm text-ink-700">{list.itemCount} title{list.itemCount === 1 ? '' : 's'}</p>
+					{#if list.description}
+						<p class="mt-4 line-clamp-4 text-sm leading-6 text-ink-700">{list.description}</p>
+					{/if}
 				</a>
 			{/each}
 		</div>

@@ -175,6 +175,45 @@ const activeChecklistMeta = $derived(
 			{/if}
 		</div>
 
+		{#if data.featuredLists.length > 0}
+			<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+				<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+					<div>
+						<p class="text-sm uppercase tracking-[0.2em] text-ink-700">List context</p>
+						<h2 class="mt-2 text-xl font-semibold text-ink-950">This title is already showing up in curated shelves.</h2>
+						<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+							Use existing collections as a shortcut into bigger moods, seasonal groupings, or starter packs built around this pick.
+						</p>
+					</div>
+					<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/lists">Browse every list</a>
+				</div>
+
+				<div class="mt-5 grid gap-4 lg:grid-cols-2">
+					{#each data.featuredLists as list (list.id)}
+						<a class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/60 hover:bg-white" href={`/lists/${list.slug}`}>
+							<div class="flex items-start justify-between gap-3">
+								<div>
+									<p class="text-xs uppercase tracking-[0.2em] text-ink-700">
+										{list.isOfficial ? 'Official list' : `By @${list.ownerHandle ?? 'toasty'}`}
+									</p>
+									<h3 class="mt-2 text-lg font-semibold text-ink-950">{list.title}</h3>
+								</div>
+								<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">#{list.position}</span>
+							</div>
+
+							<p class="mt-3 text-sm text-ink-700">
+								{list.itemCount} title{list.itemCount === 1 ? '' : 's'}
+								{list.isOfficial ? ' • editorial pick' : ''}
+							</p>
+							{#if list.description}
+								<p class="mt-3 line-clamp-3 text-sm leading-6 text-ink-700">{list.description}</p>
+							{/if}
+						</a>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
 			<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 				<div>

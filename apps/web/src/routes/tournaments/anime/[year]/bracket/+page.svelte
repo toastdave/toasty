@@ -42,6 +42,26 @@ const { data }: { data: PageData } = $props()
 		{/each}
 	</div>
 
+	<div class="mt-8 grid gap-4 md:grid-cols-3">
+		<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Current stage</p>
+			<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.currentRoundLabel ?? 'Bracket ready'}</p>
+		</div>
+
+		<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Live matchups</p>
+			<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.liveMatchupCount}</p>
+		</div>
+
+		<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Bracket votes</p>
+			<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.totalVotes}</p>
+			{#if data.bracket.summary.championTitle}
+				<p class="mt-2 text-sm leading-6 text-ink-700">Champion {data.bracket.summary.championTitle}</p>
+			{/if}
+		</div>
+	</div>
+
 	<div class="mt-8 space-y-6">
 		{#each data.bracket.rounds as round (round.roundNumber)}
 			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/60 p-6">

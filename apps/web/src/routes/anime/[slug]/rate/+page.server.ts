@@ -52,6 +52,7 @@ export const actions: Actions = {
 
 		const axes = await listAnimeRatingAxes()
 		const formData = await request.formData()
+		const intent = String(formData.get('intent') ?? 'save_rating')
 		const scores: Record<string, number> = {}
 
 		for (const axis of axes) {
@@ -74,7 +75,7 @@ export const actions: Actions = {
 			(axis) => axis.group === 'core' && typeof scores[axis.key] !== 'number'
 		)
 
-		if (missingCoreAxes.length > 0) {
+		if (intent !== 'save_draft' && missingCoreAxes.length > 0) {
 			return fail(400, { message: 'Fill out every core rating dimension before saving.' })
 		}
 
@@ -85,7 +86,16 @@ export const actions: Actions = {
 				: null
 
 		try {
-			await saveAnimeUserRating(locals.user.id, animeId, scores, reviewText, fetch)
+			const summary = await saveAnimeUserRating(locals.user.id, animeId, scores, reviewText, fetch)
+
+			if (intent === 'save_draft') {
+				return {
+					message: summary.isComplete
+						? 'Draft saved. All core dimensions are in place, so this now counts as a full Toasty rating.'
+						: `Draft saved. ${summary.coreCompleteCount} of ${summary.coreTotalCount} core dimensions are filled.`,
+					success: true,
+				}
+			}
 		} catch (cause) {
 			console.error('Unable to save anime rating', cause)
 			return fail(500, { message: 'Unable to save this rating right now.' })

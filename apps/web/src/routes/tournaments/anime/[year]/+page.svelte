@@ -56,6 +56,30 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 		{/each}
 	</div>
 
+	{#if data.bracket}
+		<div class="mt-8 grid gap-4 md:grid-cols-3">
+			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Current stage</p>
+				<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.currentRoundLabel ?? 'Bracket ready'}</p>
+				<p class="mt-2 text-sm leading-6 text-ink-700">The live tournament read without needing to open every matchup first.</p>
+			</div>
+
+			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Live duels</p>
+				<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.liveMatchupCount}</p>
+				<p class="mt-2 text-sm leading-6 text-ink-700">Open matchups currently accepting votes across the bracket.</p>
+			</div>
+
+			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Bracket pulse</p>
+				<p class="mt-3 text-2xl font-semibold text-ink-950">{data.bracket.summary.totalVotes}</p>
+				<p class="mt-2 text-sm leading-6 text-ink-700">
+					{data.bracket.summary.championTitle ? `Champion ${data.bracket.summary.championTitle}` : 'Total votes recorded so far.'}
+				</p>
+			</div>
+		</div>
+	{/if}
+
 	<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/60 p-6">
 		<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 			<div>

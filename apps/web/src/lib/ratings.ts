@@ -12,6 +12,14 @@ export type RatingAxisBlueprint = {
 	weight: string
 }
 
+export type AnimeRatingDraftSummary = {
+	coreCompleteCount: number
+	coreTotalCount: number
+	isComplete: boolean
+	overallScore: number | null
+	tags: string[]
+}
+
 export const animeRatingAxisBlueprints: RatingAxisBlueprint[] = [
 	{
 		description: 'How well made and dialed-in it feels overall.',
@@ -168,6 +176,22 @@ export function computeOverallRating(
 	return Number((weightedTotal / totalWeight).toFixed(2))
 }
 
+export function countCompletedCoreAxes(
+	scores: Record<string, number>,
+	axes = animeRatingAxisBlueprints
+) {
+	return axes.filter((axis) => axis.group === 'core' && typeof scores[axis.key] === 'number').length
+}
+
+export function hasCompletedCoreAxes(
+	scores: Record<string, number>,
+	axes = animeRatingAxisBlueprints
+) {
+	const coreAxes = axes.filter((axis) => axis.group === 'core')
+
+	return coreAxes.length > 0 && countCompletedCoreAxes(scores, axes) === coreAxes.length
+}
+
 export function extractDominantFlavorTags(scores: Record<string, number>, limit = 3) {
 	return animeRatingAxisBlueprints
 		.filter((axis) => axis.group === 'flavor')
@@ -184,4 +208,21 @@ export function extractDominantFlavorTags(scores: Record<string, number>, limit 
 		.slice(0, limit)
 		.filter((axis) => axis.score >= 7)
 		.map((axis) => axis.label)
+}
+
+export function summarizeAnimeRatingDraft(
+	scores: Record<string, number>,
+	axes = animeRatingAxisBlueprints
+): AnimeRatingDraftSummary {
+	const coreTotalCount = axes.filter((axis) => axis.group === 'core').length
+	const coreCompleteCount = countCompletedCoreAxes(scores, axes)
+	const isComplete = coreTotalCount > 0 && coreCompleteCount === coreTotalCount
+
+	return {
+		coreCompleteCount,
+		coreTotalCount,
+		isComplete,
+		overallScore: isComplete ? computeOverallRating(scores, axes) : null,
+		tags: extractDominantFlavorTags(scores),
+	}
 }
