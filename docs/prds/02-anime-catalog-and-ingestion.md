@@ -33,12 +33,13 @@ The larger canonical model is already cross-media through `media_items`. Anime-s
 - trend pages prefer cached snapshots and fall back to live Jikan requests if needed
 - anime detail pages use stale-aware refresh behavior instead of forcing a sync on every request
 - failed syncs are logged as ingest jobs
+- operator-facing Bun scripts now support manual trending refreshes, detail refreshes, and repeatable tournament prep workflows without adding internal admin UI to the consumer product
 
 ## Data freshness
 
 - top charts and schedules refresh on a short cadence through the catalog service
 - item details refresh lazily when cached detail records age out
-- failed syncs should remain recoverable through repeat sync attempts and future manual admin controls
+- failed syncs remain recoverable through repeat sync attempts and the new manual ops commands
 
 ## Future adapter direction
 

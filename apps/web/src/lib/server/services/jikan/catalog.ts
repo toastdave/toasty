@@ -161,7 +161,7 @@ async function finalizeIngestJob(
 	await db
 		.update(ingestJobs)
 		.set({
-			errorMessage,
+			errorMessage: errorMessage ? errorMessage.slice(0, 255) : undefined,
 			finishedAt: new Date(),
 			metadataJsonb: metadata,
 			status,
@@ -345,6 +345,10 @@ async function createTrendSnapshot(
 		window: TrendWindow
 	}
 ) {
+	const uniqueItems = params.items.filter(
+		(item, index, allItems) =>
+			allItems.findIndex((candidate) => candidate.mediaItemId === item.mediaItemId) === index
+	)
 	const [snapshot] = await database
 		.insert(trendSnapshots)
 		.values({
@@ -358,7 +362,7 @@ async function createTrendSnapshot(
 		.returning({ id: trendSnapshots.id })
 
 	await database.insert(trendSnapshotItems).values(
-		params.items.map((item, index) => ({
+		uniqueItems.map((item, index) => ({
 			mediaItemId: item.mediaItemId,
 			metadataJsonb: {},
 			rank: index + 1,
@@ -643,6 +647,27 @@ async function ensureFreshTrendingCatalog(fetcher: Fetcher, label: string, windo
 }
 
 export async function getLandingAnimeCatalog(fetcher: Fetcher) {
+	const readStoredFallback = async () => {
+		const [latestTopSnapshot, latestSeasonSnapshot] = await Promise.all([
+			getLatestSnapshot(TOP_ANIME_LABEL, 'all_time'),
+			getLatestSnapshot(CURRENT_SEASON_LABEL, 'daily'),
+		])
+
+		if (!latestTopSnapshot || !latestSeasonSnapshot) {
+			return null
+		}
+
+		const [topAnime, currentSeason] = await Promise.all([
+			listSnapshotAnimeCards(latestTopSnapshot.id),
+			listSnapshotAnimeCards(latestSeasonSnapshot.id),
+		])
+
+		return {
+			currentSeason,
+			topAnime,
+		}
+	}
+
 	try {
 		const [topSnapshot, seasonSnapshot] = await Promise.all([
 			getLatestSnapshot(TOP_ANIME_LABEL, 'all_time'),
@@ -672,11 +697,22 @@ export async function getLandingAnimeCatalog(fetcher: Fetcher) {
 		console.error('Failed to load landing anime catalog, falling back to Jikan', error)
 	}
 
-	const [topAnime, currentSeason] = await Promise.all([
-		fetchTopAnime(fetcher),
-		fetchSchedule(fetcher),
-	])
-	return { currentSeason, topAnime }
+	try {
+		const [topAnime, currentSeason] = await Promise.all([
+			fetchTopAnime(fetcher),
+			fetchSchedule(fetcher),
+		])
+
+		return { currentSeason, topAnime }
+	} catch (error) {
+		console.error('Failed to load live Jikan fallback for landing catalog', error)
+		return (
+			(await readStoredFallback()) ?? {
+				currentSeason: [],
+				topAnime: [],
+			}
+		)
+	}
 }
 
 export async function getTopAnimeCatalog(fetcher: Fetcher): Promise<AnimeCard[]> {
@@ -694,7 +730,12 @@ export async function getTopAnimeCatalog(fetcher: Fetcher): Promise<AnimeCard[]>
 		console.error('Failed to load top anime from catalog, falling back to Jikan', error)
 	}
 
-	return fetchTopAnime(fetcher)
+	try {
+		return await fetchTopAnime(fetcher)
+	} catch (error) {
+		console.error('Failed to load live top anime fallback', error)
+		return []
+	}
 }
 
 export async function getCurrentSeasonCatalog(fetcher: Fetcher): Promise<AnimeCard[]> {
@@ -712,7 +753,12 @@ export async function getCurrentSeasonCatalog(fetcher: Fetcher): Promise<AnimeCa
 		console.error('Failed to load current season from catalog, falling back to Jikan', error)
 	}
 
-	return fetchSchedule(fetcher)
+	try {
+		return await fetchSchedule(fetcher)
+	} catch (error) {
+		console.error('Failed to load live seasonal fallback', error)
+		return []
+	}
 }
 
 export async function getAnimeDetailCatalog(malId: number, fetcher: Fetcher): Promise<AnimeDetail> {

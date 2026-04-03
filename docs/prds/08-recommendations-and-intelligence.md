@@ -90,7 +90,8 @@ The first recommendation slice is still anime-only, but it is no longer purely h
 - profile pages can now surface the same first personalized shelf for public taste inspection
 - detail-page recommendations can now use a signed-in user's rating on the current anime to personalize the shelf
 - recommendation reasons now surface taste-lane language when flavor tags line up with candidate genres
-- the system still does not use aggregate community scores, richer completion patterns, or cross-media signals
+- recommendation ranking now uses aggregate community scores and completion volume alongside source metadata
+- the system still does not use cross-media signals or richer editorial programming
 
 This is acceptable as long as the product explains the recommendation plainly and continues to improve as richer rating data ships.
 

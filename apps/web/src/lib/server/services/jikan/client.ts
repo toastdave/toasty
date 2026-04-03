@@ -1,5 +1,3 @@
-import { env } from '$env/dynamic/private'
-
 type Fetcher = typeof fetch
 
 type JikanEnvelope<T> = {
@@ -11,7 +9,7 @@ type JikanEnvelope<T> = {
 }
 
 export async function jikanRequest<T>(path: string, fetcher: Fetcher = fetch) {
-	const baseUrl = env.JIKAN_BASE_URL || 'https://api.jikan.moe/v4'
+	const baseUrl = process.env.JIKAN_BASE_URL || 'https://api.jikan.moe/v4'
 	const response = await fetcher(`${baseUrl}${path}`, {
 		headers: {
 			accept: 'application/json',

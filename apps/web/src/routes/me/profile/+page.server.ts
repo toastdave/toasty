@@ -65,21 +65,23 @@ export const actions: Actions = {
 			return fail(400, { message: 'Avatar URL must be a valid http or https address.' })
 		}
 
+		let nextHandle: string
+
 		try {
-			const nextHandle = await updateUserProfile({
+			nextHandle = await updateUserProfile({
 				bio: bioRaw || null,
 				handle,
 				image: normalizeOptionalUrl(imageRaw),
 				name,
 				userId: locals.user.id,
 			})
-
-			throw redirect(303, buildProfilePath(nextHandle))
 		} catch (error) {
 			console.error('Unable to update profile', error)
 			return fail(400, {
 				message: 'That handle is unavailable or the profile could not be updated.',
 			})
 		}
+
+		throw redirect(303, buildProfilePath(nextHandle))
 	},
 }

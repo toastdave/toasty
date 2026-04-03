@@ -18,10 +18,14 @@ Toasty already has a credible public anime discovery surface:
 - lightweight public activity for rating saves, completions, and tournament votes
 - profile taste-signature cards built from dominant tags and strongest rating dimensions
 - rating-aware recommendation anchors on home and anime detail pages
+- community rating cards on anime detail pages built from aggregate Toasty scores and shared flavor signals
 - a public anime seeding snapshot route backed by persisted yearly rankings
 - a generated anime bracket route backed by stored tournament entries and opening-round matchups
 - interactive tournament matchup pages with signed-in voting
 - an anime-only single-page rating canvas with stored axis scores and Toasty overall scores
+- a list hub with official editorial shelves, personal lists, and public list detail pages
+- profile settings for handle, bio, avatar URL, and display-name polish
+- a tournament archive hub for yearly anime brackets
 
 Under the hood, the anime catalog is persisted locally and refreshed from Jikan through normalized source adapters and cached snapshots.
 
@@ -42,21 +46,21 @@ The updated strategy is:
 The app still needs the underlying systems that make the broader vision real.
 
 - manual sync controls and operator visibility are still missing
-- ratings are implemented in a first anime-only form, but they still need aggregate and cross-surface outputs
-- recommendation surfaces now use first-party rating signals, but they still need aggregate, completion, and profile-depth inputs
-- public activity exists in a first profile-focused form, but it still needs collections, profile reactions, and stronger filtering
-- tournament setup now has a working snapshot-to-bracket-to-vote flow, but it still needs stricter official freeze rules, rerun controls, anti-abuse protections, and later-round progression
+- operator controls now exist as Bun scripts, but they still need richer reporting and scheduling visibility
+- recommendation surfaces now use aggregate, completion, and profile-depth inputs, but they still need editorial programming and cross-media confidence rules
+- public activity exists in a stronger profile-and-list form, but it still needs reactions, filters, and richer list events
+- tournament setup now has publish and round-advance workflows, but it still needs fuller scheduling rules, prediction games, and richer historical storytelling
 - the app shell remains anime-first even though the schema is more general
 
-The largest remaining gap is that ratings are still anime-only and not yet connected into aggregate public scores or tournament seeding.
+The largest remaining gap is no longer aggregate scoring. It is now the jump from anime-first depth into a broader multi-lane product with stronger tournament meta and editorial programming.
 
 ## Recommended next sprint
 
-1. manual sync controls or scripts for top anime and current season refreshes
-2. expand the rating contract into aggregate public scores and tournament-seeding inputs
-3. deepen recommendation modules with completion behavior, broader candidate coverage, and stronger profile-level loops
-4. harden the stored seeding, generated bracket, and live-vote flow with official freeze, rerun, publish, and anti-abuse rules
-5. add profile customization basics around bio polish, avatar treatment, and more expressive public identity
+1. deepen list creation and public collection storytelling beyond the first editorial and personal list surfaces
+2. add stronger tournament scheduling, prediction, and archive storytelling layers on top of publish and advance workflows
+3. expand recommendation shelves with editorial assists and more deliberate home-page programming
+4. keep preparing the adapter and browse model for TV and movie lanes without weakening anime depth first
+5. improve ops visibility around sync history, tournament actions, and recovery paths without exposing internal scaffolding in the consumer UI
 
 ## Explicitly not next
 

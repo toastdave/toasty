@@ -121,7 +121,8 @@ The current rating implementation is still anime-first and does not yet deliver 
 - anime uses universal-style core dimensions plus a first flavor set
 - profile surfaces now show rated-title count and average Toasty score
 - tracked-title cards can now show a stored Toasty score when one exists
-- aggregate community scores and recommendation-aware use of ratings are still next
+- anime detail pages now surface community Toasty scores, shared flavor tags, and strongest core-dimension averages
+- aggregate community scores now feed recommendation ranking and tournament seeding inputs
 
 ## Relationship to recommendations
 

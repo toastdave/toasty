@@ -1,7 +1,7 @@
 import { recordCreatedListActivity } from '$lib/server/activity'
 import { ensureAnimeMediaItemId } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
-import { getCurrentSeasonCatalog, getTopAnimeCatalog } from '$lib/server/services/jikan/catalog'
+import { getLandingAnimeCatalog } from '$lib/server/services/jikan/catalog'
 import { animeDetails, listItems, lists, mediaItems, user } from '@toasty/db/schema'
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm'
 
@@ -177,10 +177,7 @@ async function mapRowsToListCards(
 }
 
 export async function ensureOfficialAnimeLists(fetcher: typeof fetch) {
-	const [seasonAnime, topAnime] = await Promise.all([
-		getCurrentSeasonCatalog(fetcher),
-		getTopAnimeCatalog(fetcher),
-	])
+	const { currentSeason: seasonAnime, topAnime } = await getLandingAnimeCatalog(fetcher)
 
 	for (const config of OFFICIAL_LISTS) {
 		const sourceItems = (config.type === 'season' ? seasonAnime : topAnime).slice(0, 8)

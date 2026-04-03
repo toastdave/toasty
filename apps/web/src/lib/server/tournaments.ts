@@ -5,6 +5,7 @@ import {
 	assignTournamentRegion,
 	buildOpeningRoundPairings,
 	groupSeedsIntoRegions,
+	openingRoundPairings,
 	scoreAnimeTournamentSeed,
 	tournamentRegions,
 } from '$lib/tournaments'
@@ -17,6 +18,7 @@ import {
 	tournamentEntries,
 	tournaments,
 	userChecklists,
+	userRatings,
 } from '@toasty/db/schema'
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
@@ -75,7 +77,9 @@ export type AnimeTournamentBracket = {
 	headerLabel: string
 	openingRoundMatchups: Array<{
 		entryA: AnimeTournamentSeed
+		entryAEntryId: string
 		entryB: AnimeTournamentSeed
+		entryBEntryId: string
 		id: string
 		label: string
 		region: (typeof tournamentRegions)[number]
@@ -84,6 +88,22 @@ export type AnimeTournamentBracket = {
 	regions: Array<{
 		items: AnimeTournamentSeed[]
 		label: (typeof tournamentRegions)[number]
+	}>
+	rounds: Array<{
+		items: Array<{
+			entryA: AnimeTournamentSeed
+			entryAEntryId: string
+			entryB: AnimeTournamentSeed
+			entryBEntryId: string
+			id: string
+			label: string
+			region: (typeof tournamentRegions)[number] | 'Final Four' | 'Title Match'
+			roundNumber: number
+			status: 'scheduled' | 'open' | 'closed' | 'finalized'
+			winnerEntryId: string | null
+		}>
+		label: string
+		roundNumber: number
 	}>
 	slug: string
 	tournamentId: string
@@ -99,7 +119,7 @@ export type AnimeTournamentMatchupDetail = {
 	entryBVotes: number
 	id: string
 	label: string
-	region: (typeof tournamentRegions)[number]
+	region: (typeof tournamentRegions)[number] | 'Final Four' | 'Title Match'
 	roundNumber: number
 	status: 'scheduled' | 'open' | 'closed' | 'finalized'
 	totalVotes: number
@@ -126,6 +146,57 @@ function toNullableNumber(value: unknown) {
 	}
 
 	return null
+}
+
+function toDate(value: unknown) {
+	if (value instanceof Date) {
+		return value
+	}
+
+	if (typeof value === 'string' || typeof value === 'number') {
+		const parsed = new Date(value)
+		return Number.isNaN(parsed.getTime()) ? null : parsed
+	}
+
+	return null
+}
+
+function toTournamentRegion(value: string | null) {
+	return tournamentRegions.includes(value as (typeof tournamentRegions)[number])
+		? (value as (typeof tournamentRegions)[number])
+		: null
+}
+
+function getRoundLabel(roundNumber: number) {
+	if (roundNumber === 1) {
+		return 'Opening round'
+	}
+
+	if (roundNumber === 2) {
+		return 'Regional finals'
+	}
+
+	if (roundNumber === 3) {
+		return 'Final Four'
+	}
+
+	if (roundNumber === 4) {
+		return 'Championship'
+	}
+
+	return `Round ${roundNumber}`
+}
+
+function getRoundRegionLabel(roundNumber: number, region: (typeof tournamentRegions)[number]) {
+	if (roundNumber <= 2) {
+		return region
+	}
+
+	if (roundNumber === 3) {
+		return 'Final Four' as const
+	}
+
+	return 'Title Match' as const
 }
 
 async function getAnimeCandidateYear(preferredYear?: number) {
@@ -262,7 +333,7 @@ async function listStoredAnimeSeeds(year: number): Promise<StoredAnimeSeedRecord
 			ratingSourceLabel:
 				candidate?.communityRatingScore !== null ? ('community' as const) : ('source' as const),
 			recommendationStrength: candidate?.recommendationStrength ?? null,
-			seed: index + 1,
+			seed: Math.floor(index / tournamentRegions.length) + 1,
 			slug: row.slug,
 			title: row.title,
 			year: row.year,
@@ -367,11 +438,15 @@ async function createAnimeTournamentSeedingSnapshot(year: number) {
 		ratingScore: candidate.ratingScore,
 		ratingSourceLabel: candidate.ratingSourceLabel,
 		recommendationStrength: candidate.recommendationStrength,
-		seed: index + 1,
+		seed: Math.floor(index / tournamentRegions.length) + 1,
 		slug: candidate.slug,
 		title: candidate.title,
 		year: candidate.year,
 	}))
+}
+
+export async function refreshAnimeTournamentSeedingSnapshot(year: number) {
+	return createAnimeTournamentSeedingSnapshot(year)
 }
 
 export async function getAnimeTournamentSeedingPreview(
@@ -460,7 +535,7 @@ export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArch
 			entryCount: row.entryCount,
 			hasBracket: Boolean(tournament),
 			status: tournament?.status ?? 'preview',
-			updatedAt: tournament?.updatedAt ?? row.updatedAt,
+			updatedAt: toDate(tournament?.updatedAt ?? row.updatedAt) ?? new Date(),
 			year: row.year,
 		}
 	})
@@ -468,7 +543,14 @@ export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArch
 
 async function getStoredAnimeTournament(year: number) {
 	const [tournament] = await db
-		.select({ id: tournaments.id, slug: tournaments.slug, updatedAt: tournaments.updatedAt })
+		.select({
+			endsAt: tournaments.endsAt,
+			id: tournaments.id,
+			slug: tournaments.slug,
+			startsAt: tournaments.startsAt,
+			status: tournaments.status,
+			updatedAt: tournaments.updatedAt,
+		})
 		.from(tournaments)
 		.where(and(eq(tournaments.year, year), eq(tournaments.mediaType, 'anime')))
 		.orderBy(desc(tournaments.createdAt))
@@ -477,14 +559,14 @@ async function getStoredAnimeTournament(year: number) {
 	return tournament ?? null
 }
 
-async function ensureOpeningRoundMatchupsOpen(tournamentId: string) {
+async function openTournamentRound(tournamentId: string, roundNumber: number) {
 	await db
 		.update(matchups)
-		.set({ status: 'open' })
+		.set({ startsAt: new Date(), status: 'open' })
 		.where(
 			and(
 				eq(matchups.tournamentId, tournamentId),
-				eq(matchups.roundNumber, 1),
+				eq(matchups.roundNumber, roundNumber),
 				eq(matchups.status, 'scheduled')
 			)
 		)
@@ -501,7 +583,14 @@ async function createAnimeTournamentBracket(year: number, seeds: StoredAnimeSeed
 				status: 'draft',
 				year,
 			})
-			.returning({ id: tournaments.id, slug: tournaments.slug, updatedAt: tournaments.updatedAt })
+			.returning({
+				endsAt: tournaments.endsAt,
+				id: tournaments.id,
+				slug: tournaments.slug,
+				startsAt: tournaments.startsAt,
+				status: tournaments.status,
+				updatedAt: tournaments.updatedAt,
+			})
 
 		const orderedSeeds = [...seeds].sort((left, right) => left.seed - right.seed)
 		const createdEntries = await tx
@@ -526,14 +615,14 @@ async function createAnimeTournamentBracket(year: number, seeds: StoredAnimeSeed
 				Boolean(entry.region)
 		)
 
-		for (const regionGroup of groupSeedsIntoRegions(regionEntries)) {
+		for (const [regionIndex, regionGroup] of groupSeedsIntoRegions(regionEntries).entries()) {
 			const pairings = buildOpeningRoundPairings(regionGroup.items)
 
 			await tx.insert(matchups).values(
 				pairings.map((pairing, index) => ({
 					entryAId: pairing.entryA.id,
 					entryBId: pairing.entryB.id,
-					matchupNumber: index + 1,
+					matchupNumber: regionIndex * openingRoundPairings.length + index + 1,
 					roundNumber: 1,
 					status: 'scheduled' as const,
 					tournamentId: createdTournament.id,
@@ -547,6 +636,305 @@ async function createAnimeTournamentBracket(year: number, seeds: StoredAnimeSeed
 	return tournament
 }
 
+async function listTournamentEntryRows(tournamentId: string) {
+	return db
+		.select({
+			id: tournamentEntries.id,
+			region: tournamentEntries.region,
+			seed: tournamentEntries.seed,
+		})
+		.from(tournamentEntries)
+		.where(eq(tournamentEntries.tournamentId, tournamentId))
+		.then((rows) =>
+			rows.map((row) => ({
+				id: row.id,
+				region: toTournamentRegion(row.region),
+				seed: row.seed,
+			}))
+		)
+}
+
+function resolveWinningEntryId(params: {
+	entryA: { id: string; seed: number }
+	entryAVotes: number
+	entryB: { id: string; seed: number }
+	entryBVotes: number
+	seedA: AnimeTournamentSeed
+	seedB: AnimeTournamentSeed
+}) {
+	if (params.entryAVotes > params.entryBVotes) {
+		return params.entryA.id
+	}
+
+	if (params.entryBVotes > params.entryAVotes) {
+		return params.entryB.id
+	}
+
+	if (params.entryA.seed !== params.entryB.seed) {
+		return params.entryA.seed < params.entryB.seed ? params.entryA.id : params.entryB.id
+	}
+
+	return (params.seedA.finalSeedScore ?? 0) >= (params.seedB.finalSeedScore ?? 0)
+		? params.entryA.id
+		: params.entryB.id
+}
+
+async function createNextRoundMatchups(params: {
+	entryMap: Map<
+		string,
+		{ id: string; region: (typeof tournamentRegions)[number] | null; seed: number }
+	>
+	finalizedMatchups: Array<{
+		matchupNumber: number
+		region: (typeof tournamentRegions)[number]
+		winnerEntryId: string
+	}>
+	roundNumber: number
+	tournamentId: string
+}) {
+	const nextRoundNumber = params.roundNumber + 1
+	const existingNextRound = await db
+		.select({ id: matchups.id })
+		.from(matchups)
+		.where(
+			and(eq(matchups.tournamentId, params.tournamentId), eq(matchups.roundNumber, nextRoundNumber))
+		)
+		.limit(1)
+
+	if (existingNextRound[0]) {
+		await openTournamentRound(params.tournamentId, nextRoundNumber)
+		return
+	}
+
+	const now = new Date()
+	const nextRoundValues = [] as Array<{
+		entryAId: string
+		entryBId: string
+		matchupNumber: number
+		roundNumber: number
+		status: 'open'
+		startsAt: Date
+		tournamentId: string
+	}>
+
+	if (params.roundNumber === 1) {
+		for (const region of tournamentRegions) {
+			const regionWinners = params.finalizedMatchups
+				.filter((matchup) => matchup.region === region)
+				.sort((left, right) => left.matchupNumber - right.matchupNumber)
+
+			if (regionWinners.length >= 2) {
+				nextRoundValues.push({
+					entryAId: regionWinners[0].winnerEntryId,
+					entryBId: regionWinners[1].winnerEntryId,
+					matchupNumber: nextRoundValues.length + 1,
+					roundNumber: nextRoundNumber,
+					startsAt: now,
+					status: 'open',
+					tournamentId: params.tournamentId,
+				})
+			}
+		}
+	} else if (params.roundNumber === 2) {
+		const winnerByRegion = new Map(
+			params.finalizedMatchups.map((matchup) => [matchup.region, matchup.winnerEntryId])
+		)
+		const semifinalPairs = [
+			['North', 'South'],
+			['East', 'West'],
+		] as const
+
+		for (const [regionA, regionB] of semifinalPairs) {
+			const winnerA = winnerByRegion.get(regionA)
+			const winnerB = winnerByRegion.get(regionB)
+
+			if (winnerA && winnerB) {
+				nextRoundValues.push({
+					entryAId: winnerA,
+					entryBId: winnerB,
+					matchupNumber: nextRoundValues.length + 1,
+					roundNumber: nextRoundNumber,
+					startsAt: now,
+					status: 'open',
+					tournamentId: params.tournamentId,
+				})
+			}
+		}
+	} else if (params.roundNumber === 3 && params.finalizedMatchups.length >= 2) {
+		nextRoundValues.push({
+			entryAId: params.finalizedMatchups[0].winnerEntryId,
+			entryBId: params.finalizedMatchups[1].winnerEntryId,
+			matchupNumber: 1,
+			roundNumber: nextRoundNumber,
+			startsAt: now,
+			status: 'open',
+			tournamentId: params.tournamentId,
+		})
+	}
+
+	if (nextRoundValues.length > 0) {
+		await db.insert(matchups).values(nextRoundValues)
+	}
+}
+
+export async function publishAnimeTournament(year: number) {
+	let seeds = await listStoredAnimeSeeds(year)
+
+	if (seeds.length === 0) {
+		const createdSeeds = await createAnimeTournamentSeedingSnapshot(year)
+
+		if (!createdSeeds) {
+			return null
+		}
+
+		seeds = createdSeeds
+	}
+
+	let tournament = await getStoredAnimeTournament(year)
+
+	if (!tournament) {
+		tournament = await createAnimeTournamentBracket(year, seeds)
+	}
+
+	await db
+		.update(tournaments)
+		.set({ startsAt: tournament.startsAt ?? new Date(), status: 'active', updatedAt: new Date() })
+		.where(eq(tournaments.id, tournament.id))
+
+	await openTournamentRound(tournament.id, 1)
+
+	return getStoredAnimeTournament(year)
+}
+
+export async function advanceAnimeTournament(year: number) {
+	const tournament = await publishAnimeTournament(year)
+
+	if (!tournament) {
+		return null
+	}
+
+	const seeds = await listStoredAnimeSeeds(year)
+	const seedMap = new Map(seeds.map((seed) => [`${seed.region}:${seed.seed}`, seed]))
+	const entryRows = await listTournamentEntryRows(tournament.id)
+	const entryMap = new Map(entryRows.map((entry) => [entry.id, entry]))
+	const [nextRound] = await db
+		.select({ roundNumber: matchups.roundNumber })
+		.from(matchups)
+		.where(and(eq(matchups.tournamentId, tournament.id), sql`${matchups.status} <> 'finalized'`))
+		.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber))
+		.limit(1)
+
+	if (!nextRound) {
+		return tournament
+	}
+
+	const roundMatchups = await db
+		.select({
+			entryAId: matchups.entryAId,
+			entryBId: matchups.entryBId,
+			id: matchups.id,
+			matchupNumber: matchups.matchupNumber,
+			roundNumber: matchups.roundNumber,
+		})
+		.from(matchups)
+		.where(
+			and(eq(matchups.tournamentId, tournament.id), eq(matchups.roundNumber, nextRound.roundNumber))
+		)
+		.orderBy(asc(matchups.matchupNumber))
+
+	const voteRows = await db
+		.select({
+			count: sql<number>`count(*)`,
+			matchupId: matchupVotes.matchupId,
+			voteEntryId: matchupVotes.voteEntryId,
+		})
+		.from(matchupVotes)
+		.where(
+			inArray(
+				matchupVotes.matchupId,
+				roundMatchups.map((matchup) => matchup.id)
+			)
+		)
+		.groupBy(matchupVotes.matchupId, matchupVotes.voteEntryId)
+
+	const voteCountMap = new Map<string, Map<string, number>>()
+
+	for (const row of voteRows) {
+		const counts = voteCountMap.get(row.matchupId) ?? new Map<string, number>()
+		counts.set(row.voteEntryId, row.count)
+		voteCountMap.set(row.matchupId, counts)
+	}
+
+	const finalizedMatchups = roundMatchups.flatMap((matchup) => {
+		const entryA = entryMap.get(matchup.entryAId)
+		const entryB = entryMap.get(matchup.entryBId)
+
+		if (!entryA?.region || !entryB?.region) {
+			return []
+		}
+
+		const seedA = seedMap.get(`${entryA.region}:${entryA.seed}`)
+		const seedB = seedMap.get(`${entryB.region}:${entryB.seed}`)
+
+		if (!seedA || !seedB) {
+			return []
+		}
+
+		const matchupVotesForEntry = voteCountMap.get(matchup.id) ?? new Map<string, number>()
+		const entryAVotes = matchupVotesForEntry.get(matchup.entryAId) ?? 0
+		const entryBVotes = matchupVotesForEntry.get(matchup.entryBId) ?? 0
+		const winnerEntryId = resolveWinningEntryId({
+			entryA,
+			entryAVotes,
+			entryB,
+			entryBVotes,
+			seedA,
+			seedB,
+		})
+
+		return [
+			{
+				id: matchup.id,
+				matchupNumber: matchup.matchupNumber,
+				region: entryA.region,
+				winnerEntryId,
+			},
+		]
+	})
+
+	const now = new Date()
+
+	for (const matchup of finalizedMatchups) {
+		await db
+			.update(matchups)
+			.set({ endsAt: now, status: 'finalized', winnerEntryId: matchup.winnerEntryId })
+			.where(eq(matchups.id, matchup.id))
+	}
+
+	if (finalizedMatchups.length === 1 && nextRound.roundNumber >= 4) {
+		await db
+			.update(tournaments)
+			.set({ endsAt: now, status: 'complete', updatedAt: now })
+			.where(eq(tournaments.id, tournament.id))
+
+		return getStoredAnimeTournament(year)
+	}
+
+	await createNextRoundMatchups({
+		entryMap,
+		finalizedMatchups,
+		roundNumber: nextRound.roundNumber,
+		tournamentId: tournament.id,
+	})
+
+	await db
+		.update(tournaments)
+		.set({ status: 'active', updatedAt: now })
+		.where(eq(tournaments.id, tournament.id))
+
+	return getStoredAnimeTournament(year)
+}
+
 export async function getAnimeTournamentBracket(
 	year: number
 ): Promise<AnimeTournamentBracket | null> {
@@ -556,13 +944,11 @@ export async function getAnimeTournamentBracket(
 		return null
 	}
 
-	let tournament = await getStoredAnimeTournament(year)
+	const tournament = await publishAnimeTournament(year)
 
 	if (!tournament) {
-		tournament = await createAnimeTournamentBracket(year, seeds)
+		return null
 	}
-
-	await ensureOpeningRoundMatchupsOpen(tournament.id)
 
 	const matchupRows = await db
 		.select({
@@ -571,24 +957,18 @@ export async function getAnimeTournamentBracket(
 			id: matchups.id,
 			matchupNumber: matchups.matchupNumber,
 			roundNumber: matchups.roundNumber,
+			status: matchups.status,
+			winnerEntryId: matchups.winnerEntryId,
 		})
 		.from(matchups)
-		.where(and(eq(matchups.tournamentId, tournament.id), eq(matchups.roundNumber, 1)))
-		.orderBy(asc(matchups.matchupNumber))
+		.where(eq(matchups.tournamentId, tournament.id))
+		.orderBy(asc(matchups.roundNumber), asc(matchups.matchupNumber))
 
-	const entryRows = await db
-		.select({
-			id: tournamentEntries.id,
-			region: tournamentEntries.region,
-			seed: tournamentEntries.seed,
-		})
-		.from(tournamentEntries)
-		.where(eq(tournamentEntries.tournamentId, tournament.id))
+	const entryRows = await listTournamentEntryRows(tournament.id)
 
 	const entryMap = new Map(entryRows.map((entry) => [entry.id, entry]))
 	const seedMap = new Map(seeds.map((seed) => [`${seed.region}:${seed.seed}`, seed]))
-
-	const openingRoundMatchups = matchupRows
+	const roundItems = matchupRows
 		.map((matchup) => {
 			const entryA = entryMap.get(matchup.entryAId)
 			const entryB = entryMap.get(matchup.entryBId)
@@ -604,16 +984,30 @@ export async function getAnimeTournamentBracket(
 				return null
 			}
 
+			const regionLabel = getRoundRegionLabel(matchup.roundNumber, entryA.region)
+
 			return {
 				entryA: seedA,
+				entryAEntryId: matchup.entryAId,
 				entryB: seedB,
+				entryBEntryId: matchup.entryBId,
 				id: matchup.id,
-				label: `${entryA.region} region • Match ${matchup.matchupNumber}`,
-				region: entryA.region,
+				label: `${getRoundLabel(matchup.roundNumber)} • Match ${matchup.matchupNumber}`,
+				region: regionLabel,
 				roundNumber: matchup.roundNumber,
+				status: matchup.status,
+				winnerEntryId: matchup.winnerEntryId,
 			}
 		})
-		.filter(Boolean) as AnimeTournamentBracket['openingRoundMatchups']
+		.filter(Boolean) as AnimeTournamentBracket['rounds'][number]['items']
+	const rounds = [...new Set(roundItems.map((item) => item.roundNumber))].map((roundNumber) => ({
+		items: roundItems.filter((item) => item.roundNumber === roundNumber),
+		label: getRoundLabel(roundNumber),
+		roundNumber,
+	}))
+	const openingRoundMatchups = roundItems.filter(
+		(item) => item.roundNumber === 1
+	) as AnimeTournamentBracket['openingRoundMatchups']
 
 	return {
 		generatedAt: tournament.updatedAt,
@@ -623,6 +1017,7 @@ export async function getAnimeTournamentBracket(
 			items: group.items,
 			label: group.region,
 		})),
+		rounds,
 		slug: tournament.slug,
 		tournamentId: tournament.id,
 		year,
@@ -634,6 +1029,8 @@ export async function getAnimeTournamentMatchupDetail(
 	matchupId: string,
 	userId?: string
 ): Promise<AnimeTournamentMatchupDetail | null> {
+	await publishAnimeTournament(year)
+
 	const [matchup] = await db
 		.select({
 			entryAId: matchups.entryAId,
@@ -660,11 +1057,6 @@ export async function getAnimeTournamentMatchupDetail(
 		return null
 	}
 
-	if (matchup.roundNumber === 1 && matchup.status === 'scheduled') {
-		await ensureOpeningRoundMatchupsOpen(matchup.tournamentId)
-		matchup.status = 'open'
-	}
-
 	const seeds = await listStoredAnimeSeeds(year)
 	const entryRows = await db
 		.select({
@@ -675,7 +1067,9 @@ export async function getAnimeTournamentMatchupDetail(
 		.from(tournamentEntries)
 		.where(inArray(tournamentEntries.id, [matchup.entryAId, matchup.entryBId]))
 
-	const entryMap = new Map(entryRows.map((entry) => [entry.id, entry]))
+	const entryMap = new Map(
+		entryRows.map((entry) => [entry.id, { ...entry, region: toTournamentRegion(entry.region) }])
+	)
 	const entryA = entryMap.get(matchup.entryAId)
 	const entryB = entryMap.get(matchup.entryBId)
 
@@ -691,7 +1085,7 @@ export async function getAnimeTournamentMatchupDetail(
 		return null
 	}
 
-	const matchupRegion = entryA.region as (typeof tournamentRegions)[number]
+	const matchupRegion = getRoundRegionLabel(matchup.roundNumber, entryA.region)
 
 	const voteRows = await db
 		.select({ count: sql<number>`count(*)`, voteEntryId: matchupVotes.voteEntryId })
@@ -720,7 +1114,7 @@ export async function getAnimeTournamentMatchupDetail(
 		entryBEntryId: matchup.entryBId,
 		entryBVotes,
 		id: matchup.id,
-		label: `${matchupRegion} region • Match ${matchup.matchupNumber}`,
+		label: `${getRoundLabel(matchup.roundNumber)} • Match ${matchup.matchupNumber}`,
 		region: matchupRegion,
 		roundNumber: matchup.roundNumber,
 		status: matchup.status,
@@ -728,6 +1122,32 @@ export async function getAnimeTournamentMatchupDetail(
 		userVoteEntryId: userVote?.voteEntryId ?? null,
 		year: matchup.year,
 	}
+}
+
+async function ensureTournamentVoterEligible(userId: string) {
+	const [[ratingSummary], [checklistSummary]] = await Promise.all([
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(userRatings)
+			.where(eq(userRatings.userId, userId)),
+		db
+			.select({
+				completedCount: sql<number>`count(*) filter (where ${userChecklists.status} = 'done')`,
+				trackedCount: sql<number>`count(*)`,
+			})
+			.from(userChecklists)
+			.where(eq(userChecklists.userId, userId)),
+	])
+
+	const ratingCount = ratingSummary?.count ?? 0
+	const completedCount = checklistSummary?.completedCount ?? 0
+	const trackedCount = checklistSummary?.trackedCount ?? 0
+
+	if (ratingCount > 0 || completedCount > 0 || trackedCount >= 3) {
+		return
+	}
+
+	throw new Error('Build a little Toasty history before voting in tournament matchups')
 }
 
 export async function submitAnimeTournamentVote(
@@ -749,6 +1169,8 @@ export async function submitAnimeTournamentVote(
 	if (!['open', 'scheduled'].includes(matchup.status)) {
 		throw new Error('Voting is closed for this matchup')
 	}
+
+	await ensureTournamentVoterEligible(userId)
 
 	await db.transaction(async (tx) => {
 		await tx

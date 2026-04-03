@@ -15,7 +15,9 @@ The first public shell is already live through shareable handle-based profile pa
 - profile pages now expose a first taste-signature layer through dominant tags and strongest rating dimensions
 - lightweight public activity now ships for rating saves, completions, and tournament votes
 - profile pages now expose a first likely-next-picks shelf based on tracked and rated anime
-- the next priority is profile customization and deeper identity, not a heavy social graph
+- editable profile settings now cover display name, handle, bio, and avatar URL polish
+- official editorial lists and first personal lists now ship through `/lists`, with add-to-list actions on anime pages and public profile list surfaces
+- the next priority is deeper social context and richer list interactions, not a heavy follow graph
 
 ## Profile evolution
 
@@ -45,6 +47,15 @@ The first shipped version now exposes a lighter rating identity layer:
 - per-title Toasty scores on tracked cards when available
 - dominant profile flavor tags
 - strongest rating dimensions by average score
+
+## Lists implementation posture
+
+The first list layer now covers both editorial and personal curation:
+
+- official Toasty starter and seasonal lists are generated from the canonical anime catalog
+- signed-in users can create public, unlisted, or private personal lists
+- anime detail pages can save a title directly into an existing list with a short note
+- public profiles can surface shared lists alongside tracked anime and activity
 
 ## Lists goals
 

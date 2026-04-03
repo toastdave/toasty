@@ -122,12 +122,13 @@ The first tournament UX should include:
 
 The first tournament setup slice is now live as an anime seeding snapshot.
 
-- the app can now project and persist a year-based anime field from current catalog quality, popularity, and checklist engagement
+- the app can now project and persist a year-based anime field from community Toasty scores, recommendation strength, popularity, and completion-aware engagement
 - a public seeding snapshot page exists at `/tournaments/anime/[year]`
 - yearly rankings now act as the first persisted seeding-snapshot backbone for anime tournaments
-- the app can now generate and persist the first opening-round bracket structure from that stored snapshot
-- a public matchup page now exists for generated opening-round duels, including signed-in voting
-- the current flow is still heuristic and should evolve toward stricter official freeze, rerun, publish, and anti-abuse rules before it becomes final tournament history
+- the app can now generate and persist bracket structure beyond the opening round through operator-driven publish and advance workflows
+- a public matchup page now exists for generated duels, including signed-in voting with a lightweight anti-abuse gate based on real account activity
+- an anime tournament archive hub now acts as the entry point for yearly bracket history
+- the current flow still needs richer scheduling, prediction metas, and stronger historical storytelling before it becomes final tournament history
 
 ## Release strategy
 

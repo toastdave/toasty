@@ -42,53 +42,57 @@ const { data }: { data: PageData } = $props()
 		{/each}
 	</div>
 
-	<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/60 p-6">
-		<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-			<div>
-				<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Opening round</p>
-				<h2 class="mt-2 text-2xl font-semibold text-ink-950">First generated matchups</h2>
-			</div>
-			<p class="text-sm text-ink-700">Round {data.bracket.openingRoundMatchups[0]?.roundNumber ?? 1}</p>
-		</div>
-
-		<div class="mt-5 grid gap-4 lg:grid-cols-2">
-			{#each data.bracket.openingRoundMatchups as matchup (matchup.id)}
-				<div class="rounded-[1.25rem] border border-black/8 bg-white/90 p-5">
-					<div class="flex items-center justify-between gap-3">
-						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{matchup.label}</p>
-						<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={`/tournaments/anime/${data.bracket.year}/matchups/${matchup.id}`}>
-							Open duel
-						</a>
+	<div class="mt-8 space-y-6">
+		{#each data.bracket.rounds as round (round.roundNumber)}
+			<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/60 p-6">
+				<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+					<div>
+						<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Round {round.roundNumber}</p>
+						<h2 class="mt-2 text-2xl font-semibold text-ink-950">{round.label}</h2>
 					</div>
-					<div class="mt-4 grid gap-3">
-						<a class="flex items-center justify-between gap-4 rounded-[1rem] border border-black/8 bg-cream-50/80 px-4 py-3 hover:border-coral-400/60 hover:bg-white" href={`/anime/${matchup.entryA.slug}`}>
-							<div>
-								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryA.seed}</p>
-								<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryA.title}</h3>
-								<p class="mt-2 text-sm text-ink-700">
-									{matchup.entryA.ratingScore !== null
-										? `${matchup.entryA.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryA.ratingScore}`
-										: 'Score pending'}
-								</p>
-							</div>
-							<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryA.finalSeedScore}</span>
-						</a>
-						<div class="text-center text-xs uppercase tracking-[0.28em] text-ink-700">vs</div>
-						<a class="flex items-center justify-between gap-4 rounded-[1rem] border border-black/8 bg-cream-50/80 px-4 py-3 hover:border-coral-400/60 hover:bg-white" href={`/anime/${matchup.entryB.slug}`}>
-							<div>
-								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryB.seed}</p>
-								<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryB.title}</h3>
-								<p class="mt-2 text-sm text-ink-700">
-									{matchup.entryB.ratingScore !== null
-										? `${matchup.entryB.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryB.ratingScore}`
-										: 'Score pending'}
-								</p>
-							</div>
-							<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryB.finalSeedScore}</span>
-						</a>
-					</div>
+					<p class="text-sm text-ink-700">{round.items.length} matchup{round.items.length === 1 ? '' : 's'}</p>
 				</div>
-			{/each}
-		</div>
+
+				<div class="mt-5 grid gap-4 lg:grid-cols-2">
+					{#each round.items as matchup (matchup.id)}
+						<div class="rounded-[1.25rem] border border-black/8 bg-white/90 p-5">
+							<div class="flex items-center justify-between gap-3">
+								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{matchup.region} • {matchup.label}</p>
+								<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href={`/tournaments/anime/${data.bracket.year}/matchups/${matchup.id}`}>
+									Open duel
+								</a>
+							</div>
+							<div class="mt-4 grid gap-3">
+								<a class={`flex items-center justify-between gap-4 rounded-[1rem] border px-4 py-3 hover:bg-white ${matchup.winnerEntryId === matchup.entryAEntryId ? 'border-mango-300/70 bg-mango-300/15' : 'border-black/8 bg-cream-50/80 hover:border-coral-400/60'}`} href={`/anime/${matchup.entryA.slug}`}>
+									<div>
+										<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryA.seed}</p>
+										<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryA.title}</h3>
+										<p class="mt-2 text-sm text-ink-700">
+											{matchup.entryA.ratingScore !== null
+												? `${matchup.entryA.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryA.ratingScore}`
+												: 'Score pending'}
+										</p>
+									</div>
+									<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryA.finalSeedScore}</span>
+								</a>
+								<div class="text-center text-xs uppercase tracking-[0.28em] text-ink-700">vs</div>
+								<a class={`flex items-center justify-between gap-4 rounded-[1rem] border px-4 py-3 hover:bg-white ${matchup.winnerEntryId === matchup.entryBEntryId ? 'border-mango-300/70 bg-mango-300/15' : 'border-black/8 bg-cream-50/80 hover:border-coral-400/60'}`} href={`/anime/${matchup.entryB.slug}`}>
+									<div>
+										<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryB.seed}</p>
+										<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryB.title}</h3>
+										<p class="mt-2 text-sm text-ink-700">
+											{matchup.entryB.ratingScore !== null
+												? `${matchup.entryB.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryB.ratingScore}`
+												: 'Score pending'}
+										</p>
+									</div>
+									<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryB.finalSeedScore}</span>
+								</a>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/each}
 	</div>
 </section>

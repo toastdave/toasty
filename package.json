@@ -15,6 +15,7 @@
 		"db:push": "bun run --cwd packages/db push",
 		"db:studio": "bun run --cwd packages/db studio",
 		"seed": "bun run --cwd packages/db seed",
+		"ops": "bun run --cwd apps/web scripts/ops.ts",
 		"docker:up": "docker compose up -d postgres",
 		"docker:down": "docker compose down"
 	},
