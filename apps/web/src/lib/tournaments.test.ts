@@ -15,18 +15,28 @@ describe('tournament helpers', () => {
 
 	it('weights stronger quality and engagement higher', () => {
 		const strongerSeed = scoreAnimeTournamentSeed({
-			engagementCount: 12,
+			aggregateRatingCount: 10,
+			communityOverallScore: 8.9,
+			completionCount: 8,
+			maxCompletionCount: 8,
 			maxEngagementCount: 12,
 			maxPopularityRank: 300,
+			recommendationStrength: 9,
 			sourcePopularityRank: 8,
 			sourceScore: 9.1,
+			trackedCount: 12,
 		})
 		const weakerSeed = scoreAnimeTournamentSeed({
-			engagementCount: 1,
+			aggregateRatingCount: 1,
+			communityOverallScore: 7.2,
+			completionCount: 1,
+			maxCompletionCount: 8,
 			maxEngagementCount: 12,
 			maxPopularityRank: 300,
+			recommendationStrength: 5,
 			sourcePopularityRank: 140,
 			sourceScore: 7.8,
+			trackedCount: 1,
 		})
 
 		expect(strongerSeed).toBeGreaterThan(weakerSeed)

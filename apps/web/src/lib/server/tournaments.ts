@@ -1,5 +1,6 @@
 import { recordTournamentVoteActivity } from '$lib/server/activity'
 import { db } from '$lib/server/db'
+import { getAnimeAggregateRatingMap } from '$lib/server/ratings'
 import {
 	assignTournamentRegion,
 	buildOpeningRoundPairings,
@@ -20,9 +21,13 @@ import {
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
 type SeedCandidateRow = {
+	aggregateRatingCount: number
+	communityRatingScore: number | null
+	completionCount: number
 	engagementCount: number
 	mediaItemId: string
 	posterUrl: string | null
+	recommendationStrength: number | null
 	slug: string
 	sourcePopularityRank: number | null
 	sourceScore: string | number | null
@@ -31,12 +36,16 @@ type SeedCandidateRow = {
 }
 
 export type AnimeTournamentSeed = {
+	completedCount: number
 	engagementCount: number
 	finalSeedScore: number
 	popularityRank: number | null
 	posterUrl: string | null
 	region: (typeof tournamentRegions)[number]
+	ratingCount: number
 	ratingScore: number | null
+	ratingSourceLabel: 'community' | 'source'
+	recommendationStrength: number | null
 	seed: number
 	slug: string
 	title: string
@@ -95,6 +104,14 @@ export type AnimeTournamentMatchupDetail = {
 	status: 'scheduled' | 'open' | 'closed' | 'finalized'
 	totalVotes: number
 	userVoteEntryId: string | null
+	year: number
+}
+
+export type AnimeTournamentArchiveCard = {
+	entryCount: number
+	hasBracket: boolean
+	status: 'active' | 'complete' | 'draft' | 'preview'
+	updatedAt: Date
 	year: number
 }
 
@@ -167,17 +184,43 @@ async function listAnimeSeedCandidates(year: number): Promise<SeedCandidateRow[]
 			animeDetails.year
 		)
 
+	const mediaItemIds = rows.map((row) => row.mediaItemId)
+	const [aggregateMap, checklistRows] = await Promise.all([
+		getAnimeAggregateRatingMap(mediaItemIds),
+		db
+			.select({ mediaItemId: userChecklists.mediaItemId, status: userChecklists.status })
+			.from(userChecklists)
+			.where(inArray(userChecklists.mediaItemId, mediaItemIds)),
+	])
+	const completionMap = new Map<string, number>()
+
+	for (const row of checklistRows) {
+		if (row.status !== 'done') {
+			continue
+		}
+
+		completionMap.set(row.mediaItemId, (completionMap.get(row.mediaItemId) ?? 0) + 1)
+	}
+
 	return rows
-		.map((row) => ({
-			engagementCount: row.engagementCount,
-			mediaItemId: row.mediaItemId,
-			posterUrl: row.posterUrl,
-			slug: row.slug,
-			sourcePopularityRank: row.sourcePopularityRank,
-			sourceScore: row.sourceScore,
-			title: row.title,
-			year: row.year ?? year,
-		}))
+		.map((row) => {
+			const aggregate = aggregateMap.get(row.mediaItemId)
+
+			return {
+				aggregateRatingCount: aggregate?.ratingCount ?? 0,
+				communityRatingScore: aggregate?.overallAvg ?? null,
+				completionCount: completionMap.get(row.mediaItemId) ?? 0,
+				engagementCount: row.engagementCount,
+				mediaItemId: row.mediaItemId,
+				posterUrl: row.posterUrl,
+				recommendationStrength: aggregate?.recommendationStrength ?? null,
+				slug: row.slug,
+				sourcePopularityRank: row.sourcePopularityRank,
+				sourceScore: row.sourceScore,
+				title: row.title,
+				year: row.year ?? year,
+			}
+		})
 		.filter((row) => Boolean(row.slug))
 }
 
@@ -199,20 +242,32 @@ async function listStoredAnimeSeeds(year: number): Promise<StoredAnimeSeedRecord
 		.innerJoin(mediaItems, eq(mediaItems.id, mediaYearlyRankings.mediaItemId))
 		.where(and(eq(mediaYearlyRankings.year, year), eq(mediaYearlyRankings.mediaType, 'anime')))
 		.orderBy(desc(mediaYearlyRankings.finalSeedScore), asc(mediaItems.title))
+	const candidateMap = new Map(
+		(await listAnimeSeedCandidates(year)).map((candidate) => [candidate.mediaItemId, candidate])
+	)
 
-	return rows.slice(0, 16).map((row, index) => ({
-		engagementCount: row.engagementRank ?? 0,
-		finalSeedScore: toNullableNumber(row.finalSeedScore) ?? 0,
-		mediaItemId: row.mediaItemId,
-		popularityRank: row.popularityRank,
-		posterUrl: row.posterUrl,
-		region: assignTournamentRegion(index),
-		ratingScore: toNullableNumber(row.compositeScore),
-		seed: index + 1,
-		slug: row.slug,
-		title: row.title,
-		year: row.year,
-	}))
+	return rows.slice(0, 16).map((row, index) => {
+		const candidate = candidateMap.get(row.mediaItemId)
+
+		return {
+			completedCount: candidate?.completionCount ?? 0,
+			engagementCount: candidate?.engagementCount ?? 0,
+			finalSeedScore: toNullableNumber(row.finalSeedScore) ?? 0,
+			mediaItemId: row.mediaItemId,
+			popularityRank: row.popularityRank,
+			posterUrl: row.posterUrl,
+			region: assignTournamentRegion(index),
+			ratingCount: candidate?.aggregateRatingCount ?? 0,
+			ratingScore: toNullableNumber(row.compositeScore),
+			ratingSourceLabel:
+				candidate?.communityRatingScore !== null ? ('community' as const) : ('source' as const),
+			recommendationStrength: candidate?.recommendationStrength ?? null,
+			seed: index + 1,
+			slug: row.slug,
+			title: row.title,
+			year: row.year,
+		}
+	})
 }
 
 async function getStoredAnimeSnapshotCreatedAt(year: number) {
@@ -237,6 +292,10 @@ async function createAnimeTournamentSeedingSnapshot(year: number) {
 		.map((candidate) => candidate.sourcePopularityRank)
 		.filter((rank): rank is number => typeof rank === 'number' && rank > 0)
 	const maxPopularityRank = Math.max(...popularityRanks, 1)
+	const maxCompletionCount = Math.max(
+		...candidates.map((candidate) => candidate.completionCount),
+		0
+	)
 	const maxEngagementCount = Math.max(
 		...candidates.map((candidate) => candidate.engagementCount),
 		0
@@ -245,18 +304,30 @@ async function createAnimeTournamentSeedingSnapshot(year: number) {
 
 	const rankedCandidates = candidates
 		.map((candidate) => ({
+			aggregateRatingCount: candidate.aggregateRatingCount,
+			completedCount: candidate.completionCount,
+			communityRatingScore: candidate.communityRatingScore,
 			engagementCount: candidate.engagementCount,
 			finalSeedScore: scoreAnimeTournamentSeed({
-				engagementCount: candidate.engagementCount,
+				aggregateRatingCount: candidate.aggregateRatingCount,
+				communityOverallScore: candidate.communityRatingScore,
+				completionCount: candidate.completionCount,
+				maxCompletionCount,
 				maxEngagementCount,
 				maxPopularityRank,
+				recommendationStrength: candidate.recommendationStrength,
 				sourcePopularityRank: candidate.sourcePopularityRank,
 				sourceScore: toNullableNumber(candidate.sourceScore),
+				trackedCount: candidate.engagementCount,
 			}),
 			mediaItemId: candidate.mediaItemId,
 			popularityRank: candidate.sourcePopularityRank,
 			posterUrl: candidate.posterUrl,
-			ratingScore: toNullableNumber(candidate.sourceScore),
+			ratingCount: candidate.aggregateRatingCount,
+			ratingScore: candidate.communityRatingScore ?? toNullableNumber(candidate.sourceScore),
+			ratingSourceLabel:
+				candidate.communityRatingScore !== null ? ('community' as const) : ('source' as const),
+			recommendationStrength: candidate.recommendationStrength,
 			slug: candidate.slug,
 			title: candidate.title,
 			year: candidate.year,
@@ -285,13 +356,17 @@ async function createAnimeTournamentSeedingSnapshot(year: number) {
 	})
 
 	return rankedCandidates.map((candidate, index) => ({
+		completedCount: candidate.completedCount,
 		engagementCount: candidate.engagementCount,
 		finalSeedScore: candidate.finalSeedScore,
 		mediaItemId: candidate.mediaItemId,
 		popularityRank: candidate.popularityRank,
 		posterUrl: candidate.posterUrl,
 		region: assignTournamentRegion(index),
+		ratingCount: candidate.ratingCount,
 		ratingScore: candidate.ratingScore,
+		ratingSourceLabel: candidate.ratingSourceLabel,
+		recommendationStrength: candidate.recommendationStrength,
 		seed: index + 1,
 		slug: candidate.slug,
 		title: candidate.title,
@@ -334,9 +409,9 @@ export async function getAnimeTournamentSeedingPreview(
 		headerLabel: `Frozen seeding snapshot for the ${year} anime bracket`,
 		isFrozenSnapshot,
 		methodology: [
-			'Universal quality signal from source score carries the heaviest weight.',
-			'Popularity rank helps separate established contenders from weaker candidates.',
-			'Checklist engagement adds a live community signal without overpowering quality.',
+			'Community Toasty scores now outrank source scores whenever enough ratings exist.',
+			'Recommendation strength and completion volume sharpen the field beyond raw hype.',
+			'Popularity rank and total tracking keep broad awareness in the mix without deciding the bracket alone.',
 		],
 		regions: tournamentRegions.map((label) => ({
 			label,
@@ -345,6 +420,50 @@ export async function getAnimeTournamentSeedingPreview(
 		seeds,
 		year,
 	}
+}
+
+export async function listAnimeTournamentArchives(): Promise<AnimeTournamentArchiveCard[]> {
+	const [rankingRows, tournamentRows] = await Promise.all([
+		db
+			.select({
+				entryCount: sql<number>`count(*)`,
+				updatedAt: sql<Date>`max(${mediaYearlyRankings.createdAt})`,
+				year: mediaYearlyRankings.year,
+			})
+			.from(mediaYearlyRankings)
+			.where(eq(mediaYearlyRankings.mediaType, 'anime'))
+			.groupBy(mediaYearlyRankings.year)
+			.orderBy(desc(mediaYearlyRankings.year)),
+		db
+			.select({
+				status: tournaments.status,
+				updatedAt: tournaments.updatedAt,
+				year: tournaments.year,
+			})
+			.from(tournaments)
+			.where(eq(tournaments.mediaType, 'anime'))
+			.orderBy(desc(tournaments.year), desc(tournaments.updatedAt)),
+	])
+
+	const tournamentMap = new Map<number, (typeof tournamentRows)[number]>()
+
+	for (const tournament of tournamentRows) {
+		if (!tournamentMap.has(tournament.year)) {
+			tournamentMap.set(tournament.year, tournament)
+		}
+	}
+
+	return rankingRows.map((row) => {
+		const tournament = tournamentMap.get(row.year)
+
+		return {
+			entryCount: row.entryCount,
+			hasBracket: Boolean(tournament),
+			status: tournament?.status ?? 'preview',
+			updatedAt: tournament?.updatedAt ?? row.updatedAt,
+			year: row.year,
+		}
+	})
 }
 
 async function getStoredAnimeTournament(year: number) {

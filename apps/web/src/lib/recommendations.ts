@@ -55,6 +55,9 @@ export function findAnimeRecommendationTasteMatches(
 }
 
 type RecommendationScoreParams = {
+	candidateCommunityRatingCount: number
+	candidateCommunityScore: number | null
+	candidateCompletionCount: number
 	candidateScore: number | null
 	candidateSeason: string | null
 	candidateYear: number | null
@@ -66,6 +69,9 @@ type RecommendationScoreParams = {
 }
 
 export function scoreAnimeRecommendationCandidate({
+	candidateCommunityRatingCount,
+	candidateCommunityScore,
+	candidateCompletionCount,
 	candidateScore,
 	candidateSeason,
 	candidateYear,
@@ -87,7 +93,16 @@ export function scoreAnimeRecommendationCandidate({
 	}
 
 	if (typeof candidateScore === 'number') {
-		score += candidateScore / 20
+		score += candidateScore / 24
+	}
+
+	if (typeof candidateCommunityScore === 'number') {
+		score += candidateCommunityScore / 14
+		score += Math.min(candidateCommunityRatingCount, 24) * 0.12
+	}
+
+	if (candidateCompletionCount > 0) {
+		score += Math.min(candidateCompletionCount, 30) * 0.08
 	}
 
 	if (typeof referenceRecommendationStrength === 'number') {

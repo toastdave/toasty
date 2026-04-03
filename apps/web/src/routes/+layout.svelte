@@ -10,6 +10,8 @@ const { data, children }: { data: LayoutData; children: Snippet } = $props()
 const navItems = $derived([
 	{ href: '/anime/top', label: 'Top anime' },
 	{ href: '/anime/schedule', label: 'Schedule' },
+	{ href: '/lists', label: 'Lists' },
+	{ href: '/tournaments/anime', label: 'Tournaments' },
 	...(data.user ? [{ href: '/me', label: 'My anime' }] : []),
 ])
 const signInHref = $derived(`/auth/sign-in?redirectTo=${encodeURIComponent(page.url.pathname)}`)

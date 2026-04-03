@@ -19,7 +19,7 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 			<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Tournament setup</p>
 			<h1 class="mt-3 font-display text-4xl tracking-tight text-ink-950">{data.tournament.headerLabel}</h1>
 			<p class="mt-4 text-base leading-7 text-ink-700">
-				This snapshot freezes a first-pass anime field from current catalog quality, popularity, and checklist engagement. It is the setup layer before live voting, full bracket generation, and historical archives fully land.
+				This snapshot freezes an anime field built from community Toasty scores, recommendation strength, popularity, and completion-aware engagement. It is the setup layer before live voting, deeper bracket rounds, and full historical archives land.
 			</p>
 		</div>
 
@@ -84,7 +84,11 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
 							<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{seed.region} region</p>
 							<h3 class="mt-2 text-lg font-semibold text-ink-950">{seed.title}</h3>
 							<p class="mt-2 text-sm text-ink-700">
-								{seed.ratingScore !== null ? `Quality ${seed.ratingScore}` : 'Score pending'}
+								{seed.ratingScore !== null
+									? `${seed.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${seed.ratingScore}`
+									: 'Score pending'}
+								{seed.ratingCount ? ` • ${seed.ratingCount} rating${seed.ratingCount === 1 ? '' : 's'}` : ''}
+								{seed.completedCount ? ` • ${seed.completedCount} finished` : ''}
 								{seed.popularityRank ? ` • Popularity #${seed.popularityRank}` : ''}
 								{seed.engagementCount ? ` • ${seed.engagementCount} tracked` : ''}
 							</p>

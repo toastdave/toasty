@@ -6,11 +6,16 @@ export const openingRoundPairings = [
 ] as const
 
 type AnimeTournamentSeedScoreParams = {
-	engagementCount: number
+	aggregateRatingCount: number
+	communityOverallScore: number | null
+	completionCount: number
+	maxCompletionCount: number
 	maxEngagementCount: number
 	maxPopularityRank: number
+	recommendationStrength: number | null
 	sourcePopularityRank: number | null
 	sourceScore: number | null
+	trackedCount: number
 }
 
 export function assignTournamentRegion(seedIndex: number) {
@@ -40,21 +45,39 @@ export function buildOpeningRoundPairings<T extends { seed: number }>(seeds: T[]
 }
 
 export function scoreAnimeTournamentSeed({
-	engagementCount,
+	aggregateRatingCount,
+	communityOverallScore,
+	completionCount,
+	maxCompletionCount,
 	maxEngagementCount,
 	maxPopularityRank,
+	recommendationStrength,
 	sourcePopularityRank,
 	sourceScore,
+	trackedCount,
 }: AnimeTournamentSeedScoreParams) {
-	const ratingComponent = (sourceScore ?? 0) / 10
+	const qualitySignal = communityOverallScore ?? sourceScore ?? 0
+	const qualityComponent = qualitySignal / 10
+	const ratingConfidenceComponent = Math.min(aggregateRatingCount / 12, 1)
 	const popularityComponent =
 		typeof sourcePopularityRank === 'number' && maxPopularityRank > 1
 			? 1 - (sourcePopularityRank - 1) / (maxPopularityRank - 1)
 			: 0
+	const recommendationComponent =
+		typeof recommendationStrength === 'number' ? recommendationStrength / 10 : 0
+	const completionComponent =
+		maxCompletionCount > 0 ? Math.min(completionCount / maxCompletionCount, 1) : 0
 	const engagementComponent =
-		maxEngagementCount > 0 ? Math.min(engagementCount / maxEngagementCount, 1) : 0
+		maxEngagementCount > 0 ? Math.min(trackedCount / maxEngagementCount, 1) : 0
 
 	return Number(
-		(ratingComponent * 60 + popularityComponent * 25 + engagementComponent * 15).toFixed(3)
+		(
+			qualityComponent * 42 +
+			ratingConfidenceComponent * 8 +
+			recommendationComponent * 14 +
+			popularityComponent * 16 +
+			completionComponent * 12 +
+			engagementComponent * 8
+		).toFixed(3)
 	)
 }

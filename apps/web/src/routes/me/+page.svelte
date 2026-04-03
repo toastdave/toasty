@@ -43,6 +43,12 @@ function resolveActivityPath(path: string | null, fallback: string) {
 				<a class="rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={resolveProfilePath(data.publicProfilePath)}>
 					View public profile
 				</a>
+				<a class="rounded-full border border-black/8 bg-white/80 px-5 py-3 text-sm font-semibold text-ink-900 hover:bg-cream-100" href="/me/profile">
+					Edit profile
+				</a>
+				<a class="rounded-full border border-black/8 bg-white/80 px-5 py-3 text-sm font-semibold text-ink-900 hover:bg-cream-100" href="/lists">
+					Manage lists
+				</a>
 				<p class="flex items-center rounded-full border border-black/8 bg-white/80 px-4 py-3 text-sm text-ink-700">
 					Public handle: <span class="ml-2 font-semibold text-ink-950">@{data.publicHandle}</span>
 				</p>
@@ -173,6 +179,33 @@ function resolveActivityPath(path: string | null, fallback: string) {
 								</p>
 							</div>
 						</div>
+					</a>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if data.lists.length > 0}
+		<div class="mt-8 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-6">
+			<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">My lists</p>
+					<h2 class="mt-2 text-2xl font-semibold text-ink-950">Shareable shelves beyond your checklist.</h2>
+				</div>
+				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/lists">
+					Open all lists
+				</a>
+			</div>
+
+			<div class="mt-5 grid gap-4 lg:grid-cols-3">
+				{#each data.lists.slice(0, 3) as list (list.id)}
+					<a class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/50 hover:bg-white" href={`/lists/${list.slug}`}>
+						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{list.visibility}</p>
+						<h3 class="mt-2 text-lg font-semibold text-ink-950">{list.title}</h3>
+						<p class="mt-2 text-sm text-ink-700">{list.itemCount} title{list.itemCount === 1 ? '' : 's'}</p>
+						{#if list.description}
+							<p class="mt-3 line-clamp-3 text-sm leading-6 text-ink-700">{list.description}</p>
+						{/if}
 					</a>
 				{/each}
 			</div>

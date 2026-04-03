@@ -10,8 +10,10 @@ import { ensureAnimeMediaItemId } from '$lib/server/checklists'
 import { db } from '$lib/server/db'
 import {
 	animeDetails,
+	mediaAggregateScores,
 	ratingAxes,
 	ratingRubrics,
+	userChecklists,
 	userRatingAxisScores,
 	userRatings,
 } from '@toasty/db/schema'
@@ -52,6 +54,28 @@ export type UserRatingSnapshot = {
 	ratedCount: number
 }
 
+export type AnimeAggregateRatingRecord = {
+	axisAverages: Record<string, number>
+	mediaItemId: string
+	overallAvg: number | null
+	ratingCount: number
+	recommendationStrength: number | null
+}
+
+export type AnimeCommunityRatingSummary = {
+	averageOverall: number | null
+	averageRecommendationStrength: number | null
+	completedCount: number
+	ratedCount: number
+	strongestAxes: Array<{
+		average: number
+		key: string
+		label: string
+	}>
+	topTags: string[]
+	trackedCount: number
+}
+
 function toNullableNumber(value: unknown) {
 	if (typeof value === 'number') {
 		return Number.isFinite(value) ? value : null
@@ -63,6 +87,18 @@ function toNullableNumber(value: unknown) {
 	}
 
 	return null
+}
+
+function readAxisAverages(value: unknown) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return {} satisfies Record<string, number>
+	}
+
+	const entries = Object.entries(value)
+		.map(([key, entry]) => [key, toNullableNumber(entry)] as const)
+		.filter((entry): entry is readonly [string, number] => entry[1] !== null)
+
+	return Object.fromEntries(entries)
 }
 
 async function getAnimeRubricRecord() {
@@ -79,6 +115,103 @@ async function getAnimeRubricRecord() {
 		.limit(1)
 
 	return rubric ?? null
+}
+
+async function recomputeAnimeAggregateRatingRecord(mediaItemId: string, rubricId: string) {
+	const [[summaryRow], axisRows] = await Promise.all([
+		db
+			.select({
+				averageOverall: sql<string | null>`avg(${userRatings.overallScore})`,
+				ratingCount: sql<number>`count(*)`,
+			})
+			.from(userRatings)
+			.where(and(eq(userRatings.mediaItemId, mediaItemId), eq(userRatings.rubricId, rubricId))),
+		db
+			.select({
+				average: sql<string>`avg(${userRatingAxisScores.score})`,
+				key: ratingAxes.key,
+			})
+			.from(userRatingAxisScores)
+			.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
+			.innerJoin(userRatings, eq(userRatings.id, userRatingAxisScores.userRatingId))
+			.where(and(eq(userRatings.mediaItemId, mediaItemId), eq(userRatings.rubricId, rubricId)))
+			.groupBy(ratingAxes.key),
+	])
+
+	const ratingCount = summaryRow?.ratingCount ?? 0
+
+	await db
+		.delete(mediaAggregateScores)
+		.where(
+			and(
+				eq(mediaAggregateScores.mediaItemId, mediaItemId),
+				eq(mediaAggregateScores.rubricId, rubricId),
+				eq(mediaAggregateScores.scopeType, 'global')
+			)
+		)
+
+	if (ratingCount === 0) {
+		return null
+	}
+
+	const axisAverages = Object.fromEntries(
+		axisRows
+			.map((row) => [row.key, toNullableNumber(row.average)] as const)
+			.filter((entry): entry is readonly [string, number] => entry[1] !== null)
+	)
+	const overallAvg = toNullableNumber(summaryRow?.averageOverall)
+
+	await db.insert(mediaAggregateScores).values({
+		axisAveragesJsonb: axisAverages,
+		mediaItemId,
+		overallAvg: overallAvg?.toFixed(2) ?? null,
+		ratingCount,
+		rubricId,
+		scopeType: 'global',
+		updatedAt: new Date(),
+	})
+
+	return {
+		axisAverages,
+		mediaItemId,
+		overallAvg,
+		ratingCount,
+		recommendationStrength: axisAverages.recommendation_strength ?? null,
+	} satisfies AnimeAggregateRatingRecord
+}
+
+async function listExistingAnimeAggregateRatings(mediaItemIds: string[], rubricId: string) {
+	if (mediaItemIds.length === 0) {
+		return [] satisfies AnimeAggregateRatingRecord[]
+	}
+
+	const rows = await db
+		.select({
+			axisAveragesJsonb: mediaAggregateScores.axisAveragesJsonb,
+			mediaItemId: mediaAggregateScores.mediaItemId,
+			overallAvg: mediaAggregateScores.overallAvg,
+			ratingCount: mediaAggregateScores.ratingCount,
+		})
+		.from(mediaAggregateScores)
+		.where(
+			and(
+				inArray(mediaAggregateScores.mediaItemId, mediaItemIds),
+				eq(mediaAggregateScores.rubricId, rubricId),
+				eq(mediaAggregateScores.scopeType, 'global')
+			)
+		)
+
+	return rows.map((row) => {
+		const axisAverages = readAxisAverages(row.axisAveragesJsonb)
+
+		return {
+			axisAverages,
+			mediaItemId: row.mediaItemId,
+			overallAvg: toNullableNumber(row.overallAvg),
+			ratingCount: row.ratingCount,
+			recommendationStrength: axisAverages.recommendation_strength ?? null,
+		} satisfies AnimeAggregateRatingRecord
+	})
 }
 
 export async function ensureAnimeRatingRubric() {
@@ -141,6 +274,41 @@ export async function ensureAnimeRatingRubric() {
 
 		return rubric.id
 	})
+}
+
+export async function getAnimeAggregateRatingMap(mediaItemIds: string[]) {
+	if (mediaItemIds.length === 0) {
+		return new Map<string, AnimeAggregateRatingRecord>()
+	}
+
+	const rubricId = await ensureAnimeRatingRubric()
+	const existingRows = await listExistingAnimeAggregateRatings(mediaItemIds, rubricId)
+	const aggregateMap = new Map(existingRows.map((row) => [row.mediaItemId, row]))
+	const missingMediaItemIds = mediaItemIds.filter((mediaItemId) => !aggregateMap.has(mediaItemId))
+
+	if (missingMediaItemIds.length === 0) {
+		return aggregateMap
+	}
+
+	const rowsWithRatings = await db
+		.select({ mediaItemId: userRatings.mediaItemId })
+		.from(userRatings)
+		.where(
+			and(inArray(userRatings.mediaItemId, missingMediaItemIds), eq(userRatings.rubricId, rubricId))
+		)
+		.groupBy(userRatings.mediaItemId)
+
+	const recomputedRows = await Promise.all(
+		rowsWithRatings.map((row) => recomputeAnimeAggregateRatingRecord(row.mediaItemId, rubricId))
+	)
+
+	for (const row of recomputedRows) {
+		if (row) {
+			aggregateMap.set(row.mediaItemId, row)
+		}
+	}
+
+	return aggregateMap
 }
 
 export async function listAnimeRatingAxes(): Promise<RatingAxisRecord[]> {
@@ -307,7 +475,83 @@ export async function saveAnimeUserRating(
 		userId,
 	})
 
+	await recomputeAnimeAggregateRatingRecord(mediaItemId, rubricId)
+
 	return overallScore
+}
+
+export async function getAnimeCommunityRatingSummary(
+	malId: number
+): Promise<AnimeCommunityRatingSummary | null> {
+	const mediaItemId = await getAnimeMediaItemId(malId)
+
+	if (!mediaItemId) {
+		return null
+	}
+
+	const [aggregateMap, checklistRows, storedRatings] = await Promise.all([
+		getAnimeAggregateRatingMap([mediaItemId]),
+		db
+			.select({ status: userChecklists.status })
+			.from(userChecklists)
+			.where(eq(userChecklists.mediaItemId, mediaItemId)),
+		db
+			.select({ tagsJsonb: userRatings.tagsJsonb })
+			.from(userRatings)
+			.where(eq(userRatings.mediaItemId, mediaItemId)),
+	])
+
+	const aggregate = aggregateMap.get(mediaItemId)
+	const tagCounts = new Map<string, number>()
+
+	for (const row of storedRatings) {
+		const tags = Array.isArray(row.tagsJsonb)
+			? row.tagsJsonb.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0)
+			: []
+
+		for (const tag of tags) {
+			tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+		}
+	}
+
+	const strongestAxes = Object.entries(aggregate?.axisAverages ?? {})
+		.map(([key, average]) => {
+			const axis = getAnimeAxisBlueprint(key)
+
+			if (!axis || axis.group !== 'core') {
+				return null
+			}
+
+			return {
+				average,
+				key,
+				label: axis.label,
+			}
+		})
+		.filter(
+			(
+				axis
+			): axis is {
+				average: number
+				key: string
+				label: string
+			} => axis !== null
+		)
+		.sort((left, right) => right.average - left.average)
+		.slice(0, 3)
+
+	return {
+		averageOverall: aggregate?.overallAvg ?? null,
+		averageRecommendationStrength: aggregate?.recommendationStrength ?? null,
+		completedCount: checklistRows.filter((row) => row.status === 'done').length,
+		ratedCount: aggregate?.ratingCount ?? 0,
+		strongestAxes,
+		topTags: [...tagCounts.entries()]
+			.sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+			.slice(0, 3)
+			.map(([tag]) => tag),
+		trackedCount: checklistRows.length,
+	}
 }
 
 export async function getUserRatingSnapshot(userId: string): Promise<UserRatingSnapshot> {

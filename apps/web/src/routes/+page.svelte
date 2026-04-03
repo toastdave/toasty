@@ -103,7 +103,7 @@ const futureTracks = [
 				<p class="text-sm uppercase tracking-[0.28em] text-coral-400">Tournament setup</p>
 				<h2 class="mt-2 font-display text-3xl text-ink-950">{data.tournamentPreview.year} anime seeding snapshot</h2>
 				<p class="mt-3 text-base leading-7 text-ink-700">
-					The first tournament layer is now live as a frozen public snapshot: current catalog quality, popularity, and live checklist engagement combine into a projected bracket field.
+					The seeding board now leans on community Toasty scores first, then recommendation strength, completions, popularity, and live tracking to shape a projected bracket field.
 				</p>
 			</div>
 			<a class="text-sm font-semibold text-ink-800 hover:text-ink-950" href={`/tournaments/anime/${data.tournamentPreview.year}`}>
@@ -126,7 +126,10 @@ const futureTracks = [
 						<div class="min-w-0">
 							<h3 class="line-clamp-2 text-lg font-semibold text-ink-950">{seed.title}</h3>
 							<p class="mt-2 text-sm text-ink-700">
-								{seed.ratingScore !== null ? `Quality ${seed.ratingScore}` : 'Score pending'}
+								{seed.ratingScore !== null
+									? `${seed.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${seed.ratingScore}`
+									: 'Score pending'}
+								{seed.ratingCount ? ` • ${seed.ratingCount} ratings` : ''}
 								{seed.engagementCount ? ` • ${seed.engagementCount} tracked` : ''}
 							</p>
 						</div>

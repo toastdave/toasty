@@ -18,7 +18,7 @@ export type ActivityFeedItem = {
 	imageUrl: string | null
 	label: string
 	title: string
-	type: 'completed' | 'rated' | 'voted'
+	type: 'completed' | 'created_list' | 'rated' | 'voted'
 }
 
 function readString(value: unknown) {
@@ -118,6 +118,26 @@ function formatActivityRow(row: {
 		}
 	}
 
+	if (row.type === 'created_list') {
+		const title = readString(payload.title)
+		const slug = readString(payload.slug)
+
+		if (!title || !slug) {
+			return null
+		}
+
+		return {
+			createdAt: row.createdAt,
+			description: 'Published a fresh list to share favorites, picks, or a watch lane.',
+			href: `/lists/${slug}`,
+			id: row.id,
+			imageUrl: null,
+			label: 'Created list',
+			title,
+			type: 'created_list' as const,
+		}
+	}
+
 	return null
 }
 
@@ -125,7 +145,7 @@ async function saveActivityEvent(params: {
 	entityId: string
 	entityType: string
 	payload: ActivityPayload
-	type: 'completed' | 'rated' | 'voted'
+	type: 'completed' | 'created_list' | 'rated' | 'voted'
 	userId: string
 }) {
 	await db.transaction(async (tx) => {
@@ -248,6 +268,24 @@ export async function recordTournamentVoteActivity(params: {
 			year: params.year,
 		},
 		type: 'voted',
+		userId: params.userId,
+	})
+}
+
+export async function recordCreatedListActivity(params: {
+	listId: string
+	slug: string
+	title: string
+	userId: string
+}) {
+	await saveActivityEvent({
+		entityId: params.listId,
+		entityType: 'list',
+		payload: {
+			slug: params.slug,
+			title: params.title,
+		},
+		type: 'created_list',
 		userId: params.userId,
 	})
 }

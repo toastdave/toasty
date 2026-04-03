@@ -30,6 +30,9 @@ describe('recommendation helpers', () => {
 
 	it('favors overlap first and then metadata affinity', () => {
 		const strongerMatch = scoreAnimeRecommendationCandidate({
+			candidateCommunityRatingCount: 12,
+			candidateCommunityScore: 8.7,
+			candidateCompletionCount: 9,
 			candidateScore: 8.5,
 			candidateSeason: 'spring',
 			candidateYear: 2024,
@@ -40,6 +43,9 @@ describe('recommendation helpers', () => {
 			sharedGenreCount: 3,
 		})
 		const weakerMatch = scoreAnimeRecommendationCandidate({
+			candidateCommunityRatingCount: 1,
+			candidateCommunityScore: 7.1,
+			candidateCompletionCount: 1,
 			candidateScore: 9.5,
 			candidateSeason: 'fall',
 			candidateYear: 2022,

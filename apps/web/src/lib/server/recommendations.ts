@@ -4,15 +4,14 @@ import {
 	scoreAnimeRecommendationCandidate,
 } from '$lib/recommendations'
 import { db } from '$lib/server/db'
+import { getAnimeAggregateRatingMap } from '$lib/server/ratings'
 import type { AnimeCard } from '$lib/server/services/jikan/adapters'
 import {
 	animeDetails,
 	genres,
 	mediaItemGenres,
 	mediaItems,
-	ratingAxes,
 	userChecklists,
-	userRatingAxisScores,
 	userRatings,
 } from '@toasty/db/schema'
 import { and, desc, eq, inArray } from 'drizzle-orm'
@@ -51,6 +50,7 @@ export type AnimeRecommendationShelf = {
 }
 
 type RecommendationReference = {
+	completedCount: number
 	genreNames: string[]
 	mediaItemId: string
 	overallScore: number | null
@@ -59,16 +59,6 @@ type RecommendationReference = {
 	tasteTags: string[]
 	title: string
 	type: 'detail' | 'rated' | 'tracked'
-	year: number | null
-}
-
-type RatedReferenceRow = {
-	mediaItemId: string
-	overallScore: string | number | null
-	ratingId: string
-	season: string | null
-	tagsJsonb: unknown
-	title: string
 	year: number | null
 }
 
@@ -227,6 +217,29 @@ async function getCandidateOverlapCounts(
 	return overlapCounts
 }
 
+async function getChecklistCompletionMap(mediaItemIds: string[]) {
+	if (mediaItemIds.length === 0) {
+		return new Map<string, number>()
+	}
+
+	const rows = await db
+		.select({ mediaItemId: userChecklists.mediaItemId, status: userChecklists.status })
+		.from(userChecklists)
+		.where(inArray(userChecklists.mediaItemId, mediaItemIds))
+
+	const completionMap = new Map<string, number>()
+
+	for (const row of rows) {
+		if (row.status !== 'done') {
+			continue
+		}
+
+		completionMap.set(row.mediaItemId, (completionMap.get(row.mediaItemId) ?? 0) + 1)
+	}
+
+	return completionMap
+}
+
 async function getAnimeReferenceByMalId(malId: number): Promise<RecommendationReference | null> {
 	const [row] = await db
 		.select({
@@ -247,6 +260,7 @@ async function getAnimeReferenceByMalId(malId: number): Promise<RecommendationRe
 	const genreMap = await getGenreMap([row.mediaItemId])
 
 	return {
+		completedCount: 0,
 		genreNames: genreMap.get(row.mediaItemId) ?? [],
 		mediaItemId: row.mediaItemId,
 		overallScore: null,
@@ -259,43 +273,6 @@ async function getAnimeReferenceByMalId(malId: number): Promise<RecommendationRe
 	}
 }
 
-async function getRecommendationStrengthForRating(ratingId: string) {
-	const [row] = await db
-		.select({ score: userRatingAxisScores.score })
-		.from(userRatingAxisScores)
-		.innerJoin(ratingAxes, eq(ratingAxes.id, userRatingAxisScores.axisId))
-		.where(
-			and(
-				eq(userRatingAxisScores.userRatingId, ratingId),
-				eq(ratingAxes.key, 'recommendation_strength')
-			)
-		)
-		.limit(1)
-
-	return toNullableNumber(row?.score)
-}
-
-async function buildRatedReference(
-	row: RatedReferenceRow
-): Promise<RecommendationReference | null> {
-	const [genreMap, recommendationStrength] = await Promise.all([
-		getGenreMap([row.mediaItemId]),
-		getRecommendationStrengthForRating(row.ratingId),
-	])
-
-	return {
-		genreNames: genreMap.get(row.mediaItemId) ?? [],
-		mediaItemId: row.mediaItemId,
-		overallScore: toNullableNumber(row.overallScore),
-		recommendationStrength,
-		season: row.season,
-		tasteTags: toStringArray(row.tagsJsonb),
-		title: row.title,
-		type: 'rated',
-		year: row.year,
-	}
-}
-
 async function getRatedAnimeReference(
 	userId: string,
 	mediaItemId?: string
@@ -304,7 +281,6 @@ async function getRatedAnimeReference(
 		.select({
 			mediaItemId: userRatings.mediaItemId,
 			overallScore: userRatings.overallScore,
-			ratingId: userRatings.id,
 			season: animeDetails.season,
 			tagsJsonb: userRatings.tagsJsonb,
 			title: mediaItems.title,
@@ -320,9 +296,27 @@ async function getRatedAnimeReference(
 		)
 		.orderBy(desc(userRatings.overallScore), desc(userRatings.updatedAt))
 		.limit(mediaItemId ? 1 : 6)
+	const mediaItemIds = rows.map((row) => row.mediaItemId)
+	const [aggregateMap, completionMap, genreMap] = await Promise.all([
+		getAnimeAggregateRatingMap(mediaItemIds),
+		getChecklistCompletionMap(mediaItemIds),
+		getGenreMap(mediaItemIds),
+	])
 
 	for (const row of rows) {
-		const reference = await buildRatedReference(row)
+		const aggregate = aggregateMap.get(row.mediaItemId)
+		const reference = {
+			completedCount: completionMap.get(row.mediaItemId) ?? 0,
+			genreNames: genreMap.get(row.mediaItemId) ?? [],
+			mediaItemId: row.mediaItemId,
+			overallScore: toNullableNumber(row.overallScore),
+			recommendationStrength: aggregate?.recommendationStrength ?? null,
+			season: row.season,
+			tasteTags: toStringArray(row.tagsJsonb),
+			title: row.title,
+			type: 'rated' as const,
+			year: row.year,
+		}
 
 		if (reference && isStrongPositiveReference(reference)) {
 			return reference
@@ -356,6 +350,7 @@ async function getLatestTrackedAnimeReference(
 	const genreMap = await getGenreMap([row.mediaItemId])
 
 	return {
+		completedCount: 0,
 		genreNames: genreMap.get(row.mediaItemId) ?? [],
 		mediaItemId: row.mediaItemId,
 		overallScore: null,
@@ -389,8 +384,10 @@ async function buildAnimeRecommendations(
 		return [] satisfies AnimeRecommendationCard[]
 	}
 
-	const [candidateRows, genreMap] = await Promise.all([
+	const [aggregateMap, candidateRows, completionMap, genreMap] = await Promise.all([
+		getAnimeAggregateRatingMap(candidateIds),
 		listStoredAnimeRows(candidateIds),
+		getChecklistCompletionMap(candidateIds),
 		getGenreMap(candidateIds),
 	])
 
@@ -399,9 +396,13 @@ async function buildAnimeRecommendations(
 	return candidateRows
 		.map((row) => {
 			const card = toAnimeCard(row, genreMap)
+			const aggregate = aggregateMap.get(row.mediaItemId)
 			const overlapGenres = card.genres.filter((genre) => referenceGenreSet.has(genre))
 			const matchedTasteTags = findAnimeRecommendationTasteMatches(reference.tasteTags, card.genres)
 			const candidateScore = scoreAnimeRecommendationCandidate({
+				candidateCommunityRatingCount: aggregate?.ratingCount ?? 0,
+				candidateCommunityScore: aggregate?.overallAvg ?? null,
+				candidateCompletionCount: completionMap.get(row.mediaItemId) ?? 0,
 				candidateScore: card.score,
 				candidateSeason: card.season,
 				candidateYear: card.year,

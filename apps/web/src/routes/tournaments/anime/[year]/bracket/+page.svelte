@@ -65,6 +65,11 @@ const { data }: { data: PageData } = $props()
 							<div>
 								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryA.seed}</p>
 								<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryA.title}</h3>
+								<p class="mt-2 text-sm text-ink-700">
+									{matchup.entryA.ratingScore !== null
+										? `${matchup.entryA.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryA.ratingScore}`
+										: 'Score pending'}
+								</p>
 							</div>
 							<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryA.finalSeedScore}</span>
 						</a>
@@ -73,6 +78,11 @@ const { data }: { data: PageData } = $props()
 							<div>
 								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Seed #{matchup.entryB.seed}</p>
 								<h3 class="mt-2 font-semibold text-ink-950">{matchup.entryB.title}</h3>
+								<p class="mt-2 text-sm text-ink-700">
+									{matchup.entryB.ratingScore !== null
+										? `${matchup.entryB.ratingSourceLabel === 'community' ? 'Community' : 'Source'} ${matchup.entryB.ratingScore}`
+										: 'Score pending'}
+								</p>
 							</div>
 							<span class="rounded-full bg-ink-950 px-3 py-1 text-sm font-semibold text-cream-50">{matchup.entryB.finalSeedScore}</span>
 						</a>

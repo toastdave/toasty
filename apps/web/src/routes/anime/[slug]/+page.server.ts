@@ -6,7 +6,8 @@ import {
 	removeAnimeChecklistEntry,
 	saveAnimeChecklistEntry,
 } from '$lib/server/checklists'
-import { getAnimeUserRating } from '$lib/server/ratings'
+import { addAnimeToUserList, listUserListOptions } from '$lib/server/lists'
+import { getAnimeCommunityRatingSummary, getAnimeUserRating } from '$lib/server/ratings'
 import { getAnimeDetailRecommendationShelf } from '$lib/server/recommendations'
 import { getAnimeDetailCatalog } from '$lib/server/services/jikan/catalog'
 import { buildAnimeSlug } from '$lib/utils/anime'
@@ -28,14 +29,21 @@ export const load: PageServerLoad = async ({ locals, params, fetch }) => {
 		throw redirect(308, `/anime/${canonicalSlug}`)
 	}
 
-	const checklistEntry = locals.user ? await getAnimeChecklistEntry(locals.user.id, animeId) : null
-	const userRating = locals.user ? await getAnimeUserRating(locals.user.id, animeId) : null
-	const recommendationShelf = await getAnimeDetailRecommendationShelf(animeId, locals.user?.id)
+	const [checklistEntry, communityRating, recommendationShelf, userLists, userRating] =
+		await Promise.all([
+			locals.user ? getAnimeChecklistEntry(locals.user.id, animeId) : null,
+			getAnimeCommunityRatingSummary(animeId),
+			getAnimeDetailRecommendationShelf(animeId, locals.user?.id),
+			locals.user ? listUserListOptions(locals.user.id) : [],
+			locals.user ? getAnimeUserRating(locals.user.id, animeId) : null,
+		])
 
 	return {
 		anime,
 		checklistEntry,
+		communityRating,
 		recommendationShelf,
+		userLists,
 		userRating,
 	}
 }
@@ -71,6 +79,29 @@ export const actions: Actions = {
 
 		if (intent === 'clear') {
 			await removeAnimeChecklistEntry(locals.user.id, mediaItemId)
+			throw redirect(303, url.pathname)
+		}
+
+		if (intent === 'add_to_list') {
+			const listId = formData.get('listId')
+			const note = formData.get('note')
+
+			if (typeof listId !== 'string' || listId.length === 0) {
+				return fail(400, { message: 'Choose one of your lists first.' })
+			}
+
+			try {
+				await addAnimeToUserList({
+					listId,
+					mediaItemId,
+					note: typeof note === 'string' && note.trim().length > 0 ? note.trim() : null,
+					userId: locals.user.id,
+				})
+			} catch (cause) {
+				console.error('Unable to save anime to list', cause)
+				return fail(400, { message: 'Unable to save this anime to that list right now.' })
+			}
+
 			throw redirect(303, url.pathname)
 		}
 

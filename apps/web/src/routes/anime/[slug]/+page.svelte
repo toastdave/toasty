@@ -128,6 +128,56 @@ const activeChecklistMeta = $derived(
 		<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
 			<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Save to a list</p>
+					<h2 class="mt-2 text-xl font-semibold text-ink-950">Turn this pick into part of a bigger shelf.</h2>
+					<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+						Use lists for starter packs, seasonal shortlists, comfort-watch piles, or any other anime lane you want to share.
+					</p>
+				</div>
+				<a class="text-sm font-semibold text-coral-400 hover:text-coral-400/80" href="/lists">Open all lists</a>
+			</div>
+
+			{#if data.user}
+				{#if data.userLists.length > 0}
+					<form class="mt-5 grid gap-4 lg:grid-cols-[0.7fr_1fr_auto]" method="POST">
+						<input name="intent" type="hidden" value="add_to_list" />
+						<label class="block">
+							<span class="text-sm font-semibold text-ink-950">List</span>
+							<select class="mt-2 block w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-ink-950" name="listId">
+								{#each data.userLists as list (list.id)}
+									<option value={list.id}>{list.title} ({list.itemCount})</option>
+								{/each}
+							</select>
+						</label>
+
+						<label class="block">
+							<span class="text-sm font-semibold text-ink-950">Optional note</span>
+							<input class="mt-2 block w-full rounded-[1rem] border border-black/8 bg-white px-4 py-3 text-sm text-ink-950" maxlength="280" name="note" placeholder="Why this belongs in the list" type="text" />
+						</label>
+
+						<div class="flex items-end">
+							<button class="w-full rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" type="submit">
+								Add to list
+							</button>
+						</div>
+					</form>
+				{:else}
+					<div class="mt-5 rounded-[1.25rem] border border-dashed border-black/10 bg-white/70 p-5 text-sm leading-7 text-ink-700">
+						You do not have any lists yet. Start one on the <a class="font-semibold text-coral-400 hover:text-coral-400/80" href="/lists">lists page</a>, then return here to add this anime.
+					</div>
+				{/if}
+			{:else}
+				<div class="mt-5">
+					<a class="inline-flex rounded-full bg-ink-950 px-5 py-3 text-sm font-semibold text-cream-50 hover:bg-ink-800" href={signInHref}>
+						Sign in to save to lists
+					</a>
+				</div>
+			{/if}
+		</div>
+
+		<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div>
 					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Toasty rating</p>
 					<h2 class="mt-2 text-xl font-semibold text-ink-950">
 						{#if data.userRating?.overallScore !== null && data.userRating?.overallScore !== undefined}
@@ -153,6 +203,74 @@ const activeChecklistMeta = $derived(
 					{data.user ? 'Open rating canvas' : 'Sign in to rate'}
 				</a>
 			</div>
+		</div>
+
+		<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">
+			<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Community pulse</p>
+					<h2 class="mt-2 text-xl font-semibold text-ink-950">
+						{#if data.communityRating && data.communityRating.averageOverall !== null}
+							Community Toasty score {data.communityRating.averageOverall}
+						{:else}
+							Early signal board
+						{/if}
+					</h2>
+					<p class="mt-2 max-w-2xl text-sm leading-6 text-ink-700">
+						{#if data.communityRating && data.communityRating.ratedCount > 0}
+							Built from {data.communityRating.ratedCount} rating{data.communityRating.ratedCount === 1 ? '' : 's'} and {data.communityRating.completedCount} completion{data.communityRating.completedCount === 1 ? '' : 's'} so far.
+						{:else}
+							Once a few Toasty ratings land, this panel starts surfacing the strongest shared reactions and recommendation strength.
+						{/if}
+					</p>
+				</div>
+
+				{#if data.communityRating}
+					<div class="rounded-[1.25rem] border border-black/8 bg-white/80 px-4 py-3 text-sm text-ink-700">
+						<p>
+							Tracked <span class="font-semibold text-ink-950">{data.communityRating.trackedCount}</span>
+						</p>
+						{#if data.communityRating.averageRecommendationStrength !== null}
+							<p class="mt-2">
+								Rec strength <span class="font-semibold text-ink-950">{data.communityRating.averageRecommendationStrength}</span>
+							</p>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			{#if data.communityRating && (data.communityRating.topTags.length > 0 || data.communityRating.strongestAxes.length > 0)}
+				<div class="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+					<div class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4">
+						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Shared flavor tags</p>
+						{#if data.communityRating.topTags.length > 0}
+							<div class="mt-3 flex flex-wrap gap-2">
+								{#each data.communityRating.topTags as tag (tag)}
+									<span class="rounded-full bg-cream-50 px-3 py-2 text-sm font-semibold text-ink-950">{tag}</span>
+								{/each}
+							</div>
+						{:else}
+							<p class="mt-3 text-sm leading-6 text-ink-700">Community flavor tags are still settling in.</p>
+						{/if}
+					</div>
+
+					<div class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4">
+						<p class="text-xs uppercase tracking-[0.2em] text-ink-700">Strongest shared dimensions</p>
+						{#if data.communityRating.strongestAxes.length > 0}
+							<div class="mt-3 space-y-3">
+								{#each data.communityRating.strongestAxes as axis (axis.key)}
+									<div class="flex items-center justify-between gap-3 rounded-[1rem] border border-black/8 bg-cream-50/70 px-3 py-3 text-sm text-ink-700">
+										<span class="font-semibold text-ink-950">{axis.label}</span>
+										<span>Avg {axis.average}</span>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="mt-3 text-sm leading-6 text-ink-700">Not enough community rating depth yet.</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<div class="mt-6 flex flex-wrap gap-2 text-sm font-medium text-ink-800">

@@ -171,6 +171,25 @@ function resolveActivityPath(path: string | null, fallback: string) {
 				</div>
 			{/if}
 
+			{#if data.profile.lists.length > 0}
+				<div class="mt-6 rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-6">
+					<p class="text-sm uppercase tracking-[0.2em] text-ink-700">Public lists</p>
+					<h2 class="mt-2 text-2xl font-semibold text-ink-950">Collections this profile chose to share.</h2>
+
+					<div class="mt-5 grid gap-4 lg:grid-cols-2">
+						{#each data.profile.lists as list (list.id)}
+							<a class="rounded-[1.25rem] border border-black/8 bg-white/90 p-4 hover:border-coral-400/50 hover:bg-white" href={`/lists/${list.slug}`}>
+								<p class="text-xs uppercase tracking-[0.2em] text-ink-700">{list.itemCount} title{list.itemCount === 1 ? '' : 's'}</p>
+								<h3 class="mt-2 text-lg font-semibold text-ink-950">{list.title}</h3>
+								{#if list.description}
+									<p class="mt-3 line-clamp-3 text-sm leading-6 text-ink-700">{list.description}</p>
+								{/if}
+							</a>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
 			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{#each data.profile.sections as section (section.status)}
 					<div class="rounded-[1.5rem] border border-black/8 bg-cream-50/80 p-5">

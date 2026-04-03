@@ -43,7 +43,9 @@ function votePercent(votes: number, totalVotes: number) {
 			</p>
 			<h2 class="mt-3 text-2xl font-semibold">{data.matchup.entryA.title}</h2>
 			<p class={`mt-3 text-sm ${data.matchup.userVoteEntryId === data.matchup.entryAEntryId ? 'text-cream-50/85' : 'text-ink-700'}`}>
-				Quality {data.matchup.entryA.ratingScore ?? 'TBD'}
+				{data.matchup.entryA.ratingSourceLabel === 'community' ? 'Community' : 'Source'} {data.matchup.entryA.ratingScore ?? 'TBD'}
+				{data.matchup.entryA.ratingCount ? ` • ${data.matchup.entryA.ratingCount} rating${data.matchup.entryA.ratingCount === 1 ? '' : 's'}` : ''}
+				{data.matchup.entryA.completedCount ? ` • ${data.matchup.entryA.completedCount} finished` : ''}
 				{data.matchup.entryA.popularityRank ? ` • Popularity #${data.matchup.entryA.popularityRank}` : ''}
 				{data.matchup.entryA.engagementCount ? ` • ${data.matchup.entryA.engagementCount} tracked` : ''}
 			</p>
@@ -63,7 +65,9 @@ function votePercent(votes: number, totalVotes: number) {
 			</p>
 			<h2 class="mt-3 text-2xl font-semibold">{data.matchup.entryB.title}</h2>
 			<p class={`mt-3 text-sm ${data.matchup.userVoteEntryId === data.matchup.entryBEntryId ? 'text-cream-50/85' : 'text-ink-700'}`}>
-				Quality {data.matchup.entryB.ratingScore ?? 'TBD'}
+				{data.matchup.entryB.ratingSourceLabel === 'community' ? 'Community' : 'Source'} {data.matchup.entryB.ratingScore ?? 'TBD'}
+				{data.matchup.entryB.ratingCount ? ` • ${data.matchup.entryB.ratingCount} rating${data.matchup.entryB.ratingCount === 1 ? '' : 's'}` : ''}
+				{data.matchup.entryB.completedCount ? ` • ${data.matchup.entryB.completedCount} finished` : ''}
 				{data.matchup.entryB.popularityRank ? ` • Popularity #${data.matchup.entryB.popularityRank}` : ''}
 				{data.matchup.entryB.engagementCount ? ` • ${data.matchup.entryB.engagementCount} tracked` : ''}
 			</p>
